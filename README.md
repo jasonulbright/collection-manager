@@ -4,6 +4,8 @@ A WinForms-based PowerShell GUI for managing MECM (Configuration Manager) device
 
 Includes a template library with 155 ready-made operational queries and 20 parameterized WQL templates.
 
+![Collection Manager](screenshot.png)
+
 ## Requirements
 
 - Windows 10/11
