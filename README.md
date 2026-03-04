@@ -108,7 +108,7 @@ Invoke-Pester .\CollectionManagerCommon.Tests.ps1
 
 ## License
 
-See [LICENSE](LICENSE) file.
+This project is licensed under the [MIT License](LICENSE).
 
 ## Author
 
