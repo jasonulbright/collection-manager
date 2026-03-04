@@ -339,7 +339,7 @@ function Copy-ManagedCollection {
 
     Write-Log "Cloning collection $SourceCollectionId as '$NewName'..."
 
-    $clone = Copy-CMCollection -Id $SourceCollectionId -NewName $NewName -ErrorAction Stop
+    $clone = Copy-CMCollection -Id $SourceCollectionId -NewName $NewName -PassThru -ErrorAction Stop
     Write-Log "Cloned to '$NewName' (ID: $($clone.CollectionID))"
     return $clone
 }

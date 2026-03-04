@@ -574,7 +574,7 @@ $splitWql.Orientation = [System.Windows.Forms.Orientation]::Vertical; $splitWql.
 $splitWql.BackColor = $clrSepLine; $splitWql.Panel1.BackColor = $clrPanelBg; $splitWql.Panel2.BackColor = $clrPanelBg
 $splitWql.Panel1MinSize = 100; $splitWql.Panel2MinSize = 100
 $tabWqlEditor.Controls.Add($splitWql)
-$splitWql.SplitterDistance = [Math]::Max($splitWql.Panel1MinSize, [int]($splitWql.Width * 0.3))
+# SplitterDistance deferred to Shown event (Width is 0 before layout)
 
 # Left panel: collection selector + rule list + buttons
 $pnlWqlLeft = New-Object System.Windows.Forms.Panel; $pnlWqlLeft.Dock = [System.Windows.Forms.DockStyle]::Fill; $pnlWqlLeft.BackColor = $clrPanelBg
@@ -796,7 +796,7 @@ $splitTemplates.Orientation = [System.Windows.Forms.Orientation]::Vertical; $spl
 $splitTemplates.BackColor = $clrSepLine; $splitTemplates.Panel1.BackColor = $clrPanelBg; $splitTemplates.Panel2.BackColor = $clrPanelBg
 $splitTemplates.Panel1MinSize = 100; $splitTemplates.Panel2MinSize = 100
 $tabTemplates.Controls.Add($splitTemplates)
-$splitTemplates.SplitterDistance = [Math]::Max($splitTemplates.Panel1MinSize, [int]($splitTemplates.Width * 0.35))
+# SplitterDistance deferred to Shown event (Width is 0 before layout)
 
 # Left: template tree
 $treeTemplates = New-Object System.Windows.Forms.TreeView; $treeTemplates.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -1364,6 +1364,9 @@ $form.Add_FormClosing({
 
 $form.Add_Shown({
     Restore-WindowState; Update-StatusBar
+    # Set SplitContainer distances now that layout is complete and Width is real
+    $splitWql.SplitterDistance = [Math]::Max($splitWql.Panel1MinSize, [int]($splitWql.Width * 0.3))
+    $splitTemplates.SplitterDistance = [Math]::Max($splitTemplates.Panel1MinSize, [int]($splitTemplates.Width * 0.35))
     Invoke-LoadTemplates
     Add-LogLine -TextBox $txtLog -Message "Collection Manager ready. Configure Site/Provider in Preferences, then click Load Collections."
 })
