@@ -2,6 +2,14 @@
 
 All notable changes to the Collection Manager are documented in this file.
 
+## [1.0.1] - 2026-03-04
+
+### Fixed
+- `Copy-CMCollection` missing `-PassThru` -- clone result was always `$null`, so the logged CollectionID was blank
+- SplitContainer `SplitterDistance` on WQL Editor and Templates tabs deferred to `Shown` event -- splitters were always 100px because `Width` is 0 before layout
+
+---
+
 ## [1.0.0] - 2026-03-03
 
 ### Added
