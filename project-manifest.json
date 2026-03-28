@@ -3,5 +3,5 @@
   "Status": "active",
   "Category": "MECM",
   "ValidationSchedule": "monthly",
-  "Notes": "WinForms GUI for MECM device collections. Stable."
+  "Notes": "WinForms GUI for MECM device collections. Stable. Pending: C# + Fluent UI conversion."
 }
