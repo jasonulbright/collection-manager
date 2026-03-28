@@ -1,0 +1,7 @@
+{
+  "ProjectType": "mecm-tool",
+  "Status": "active",
+  "Category": "MECM",
+  "ValidationSchedule": "monthly",
+  "Notes": "WinForms GUI for MECM device collections. Stable."
+}
