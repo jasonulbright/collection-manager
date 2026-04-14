@@ -1,8 +1,8 @@
-{
-  "ProjectType": "mecm-tool",
-  "Description": "MECM device collection manager with offline WQL editor",
-  "Status": "active",
-  "Category": "MECM",
-  "ValidationSchedule": "monthly",
-  "Notes": "TASK: C# + Fluent UI conversion\nINFO: WinForms GUI for MECM device collection management\nINFO: Stable"
+﻿{
+    "ProjectType":  "mecm-tool",
+    "Description":  "MECM device collection manager with offline WQL editor",
+    "Status":  "active",
+    "Category":  "MECM",
+    "ValidationSchedule":  "monthly",
+    "Notes":  "PLAN: C# Fluent UI conversion as private repo fork\nINFO: WinForms GUI for MECM device collection management\nINFO: Stable"
 }
