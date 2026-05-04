@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CollectionManagerCommon.psm1'
-    ModuleVersion     = '1.0.0'
+    ModuleVersion     = '1.0.1'
     GUID              = 'b2c3d4e5-f6a7-8901-bcde-f23456789012'
     Author            = 'Jason Ulbright'
     Description       = 'Collection management and offline WQL editor for MECM device collections.'

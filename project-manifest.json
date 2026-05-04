@@ -3,7 +3,7 @@
     "Description":  "MECM device collection manager with offline WQL editor",
     "Status":  "active",
     "Category":  "MECM",
-    "Version":  "1.0.0",
+    "Version":  "1.0.1",
     "ValidationSchedule":  "monthly",
     "Notes":  "INFO: v1.0 WPF shell shipped 2026-05-02 (MahApps sidebar, 3 views, 5 modals, 23 Pester green, contrast harness clean)"
 }

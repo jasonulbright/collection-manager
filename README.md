@@ -2,7 +2,7 @@
 
 A MahApps.Metro WPF GUI for managing MECM (Configuration Manager) device collections with an offline WQL editor. Bypass the slow console query editor -- load all collections into a local grid, edit WQL queries in a fast monospace editor, validate, preview results, and apply changes in bulk.
 
-Ships with a template library: 157 ready-made operational queries and 20 parameterized WQL templates.
+Ships with a template library: 225 ready-made operational queries and 20 parameterized WQL templates.
 
 ![Collection Manager](screenshot.png)
 
@@ -67,7 +67,7 @@ The shell uses a sidebar layout with three views and an Options modal:
 
 ## Template Categories
 
-**Operational**: Clients, Clients Version, Hardware Inventory, Laptops, Mobile Devices, Office 365 Build / Channel, SCCM Infrastructure, Servers, Software Inventory, System Health, Systems, Windows Update Agent, Workstations.
+**Operational**: Clients, Clients Version, Hardware Inventory, Laptops, Microsoft 365 Apps Build Version / Channel, Mobile Devices, Office 365 Build / Channel (legacy), Project, SCCM Infrastructure, Servers, Software Inventory, System Health, Systems, Visio, Windows Update Agent, Workstations.
 
 **Parameterized**: Software (Installed / Not Installed by Name, Version), OS Build, Client Version, Manufacturer, Model, HW / SW Inventory Reporting, AD OU, Created Within N Days, Chassis Type, TPM, Disk Space, RAM, IP Subnet, Domain, BIOS Version, BitLocker, Last Boot.
 
@@ -82,7 +82,7 @@ collectionmanager/
 |  +- CollectionManagerCommon.psd1           # Module manifest
 |  \- CollectionManagerCommon.psm1           # Business logic (28 functions)
 +- Templates/
-|  +- operational-collections.json           # 157 ready-made queries
+|  +- operational-collections.json           # 225 ready-made queries
 |  \- parameterized-templates.json           # 20 parameterized templates
 +- Logs/                                     # Session logs (per-run)
 +- Reports/                                  # CSV / HTML exports

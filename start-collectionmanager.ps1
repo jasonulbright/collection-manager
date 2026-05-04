@@ -18,8 +18,8 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 1.0.0
-    Updated    : 2026-05-02
+    Version    : 1.0.1
+    Updated    : 2026-05-04
 #>
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification='Per feedback_ps_wpf_handler_rules.md and PS51-WPF-001..003: flat-.ps1 GetNewClosure strips $script: scope. $global: survives closure scope-strip and keeps shared mutable state reachable from closure-captured handlers.')]
@@ -2414,7 +2414,7 @@ function Show-OptionsDialog {
 
             <StackPanel x:Name="paneAbout" Visibility="Collapsed">
                 <TextBlock Text="About" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.0.0"
+                <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.0.1"
                            FontSize="13" FontWeight="SemiBold"/>
                 <TextBlock Text="Browse, create, copy, and remove MECM device collections. Edit query rules with offline WQL validation and a 1-shot result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>

@@ -3,11 +3,46 @@
 All notable changes to Collection Manager are documented in this
 file.
 
+## [1.0.1] - 2026-05-04
+
+### Changed
+
+- **Operational template library expanded from 157 to 225 entries.**
+  Source material (SystemCenterDudes) was last updated mid-2022 and
+  did not cover incremental OS, Microsoft 365 Apps, or Configuration
+  Manager releases since. Legacy entries (Windows XP/7/8, Server
+  2003/2008, Windows Phone, retired Win10 builds, "CB/CBB" naming)
+  are preserved for environments that still inventory them.
+- **Clients Version | Not Latest** baseline updated from 2207 to 2509.
+
+### Added
+
+- **Configuration Manager clients**: Clients Version | 2409, 2503,
+  2509 (build prefixes 5.00.9132 / 9135 / 9141).
+- **Servers**: Windows Server 2022 (build 20348) and Windows Server
+  2025 (build 26100).
+- **Workstations**: Windows 11 v25H2 (build 10.0.26200), Defender
+  for Endpoint Onboarded / Not Onboarded (current naming for the
+  same `AdvancedThreatProtectionHealthStatus` queries).
+- **Systems | ARM64**: detects ARM64-based PCs via
+  `SMS_G_System_COMPUTER_SYSTEM.SystemType`.
+- **Microsoft 365 Apps Build Version**: monthly Current Channel
+  builds 2208 through 2603 (43 entries).
+- **Microsoft 365 Apps Channel**: Current Channel, Current Channel
+  (Preview), Monthly Enterprise Channel, Semi-Annual Enterprise
+  Channel, Semi-Annual Enterprise Channel (Preview), Beta Channel.
+  These supersede the legacy "Office 365 Channel | Monthly /
+  Semi-Annual" naming retired by Microsoft in September 2020.
+- **Visio**: Installed (Any Edition), Subscription (Plan 1 / Plan 2),
+  LTSC 2024, LTSC 2021, 2019.
+- **Project**: Installed (Any Edition), Subscription (Plan 1 / Plan
+  3 / Plan 5), LTSC 2024, LTSC 2021, 2019.
+
 ## [1.0.0] - 2026-05-02
 
 Collection Manager is a MECM device collection manager with an
 offline WQL editor and a 177-template library (157 operational +
-20 parameterized). Ships as a zip + `install.ps1` wrapper; no MSI,
+20 parameterized; expanded to 225 + 20 in subsequent releases). Ships as a zip + `install.ps1` wrapper; no MSI,
 no code signing required.
 
 ### Features
