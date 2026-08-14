@@ -78,9 +78,10 @@ collectionmanager/
 +- start-collectionmanager.ps1               # WPF shell
 +- MainWindow.xaml                           # Main window layout
 +- Lib/                                      # Vendored MahApps.Metro 2.4.10
+|  \- SuiteCommon/                           # Vendored shared core: logging + CM connection
 +- Module/
 |  +- CollectionManagerCommon.psd1           # Module manifest
-|  \- CollectionManagerCommon.psm1           # Business logic (28 functions)
+|  \- CollectionManagerCommon.psm1           # Business logic (25 functions)
 +- Templates/
 |  +- operational-collections.json           # 225 ready-made queries
 |  \- parameterized-templates.json           # 20 parameterized templates
