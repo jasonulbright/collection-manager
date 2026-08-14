@@ -1,5 +1,10 @@
 # Collection Manager
 
+[![Latest release](https://img.shields.io/github/v/release/jasonulbright/collection-manager?label=release)](https://github.com/jasonulbright/collection-manager/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/jasonulbright/collection-manager/total?label=downloads)](https://github.com/jasonulbright/collection-manager/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D4)](#requirements)
+[![License](https://img.shields.io/github/license/jasonulbright/collection-manager)](LICENSE)
+
 A MahApps.Metro WPF GUI for managing MECM (Configuration Manager) device collections with an offline WQL editor. Bypass the slow console query editor -- load all collections into a local grid, edit WQL queries in a fast monospace editor, validate, preview results, and apply changes in bulk.
 
 Ships with a template library: 225 ready-made operational queries and 20 parameterized WQL templates.
