@@ -711,40 +711,22 @@ $script:BgPowerShell   = $null
 $script:BgInvokeHandle = $null
 $script:BgState        = $null
 $script:BgTimer        = $null
+$script:BgGraveyard    = @()
 
 function Initialize-BgRunspace {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Lazy-init of the background runspace; idempotent.')]
     param()
     if ($script:BgRunspace -and $script:BgRunspace.RunspaceStateInfo.State -eq 'Opened') { return }
-
-    $script:BgRunspace = [runspacefactory]::CreateRunspace()
-    $script:BgRunspace.ApartmentState = 'STA'
-    $script:BgRunspace.ThreadOptions  = 'ReuseThread'
-    $script:BgRunspace.Open()
-
-    $modulePath = Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1'
-
-    $initPS = [powershell]::Create()
-    $initPS.Runspace = $script:BgRunspace
-    [void]$initPS.AddScript({
-        param($ModulePath, $LogPath)
-        Import-Module -Name $ModulePath -Force -DisableNameChecking
-        if ($LogPath) { Initialize-Logging -LogPath $LogPath -Attach }
-    }).AddArgument($modulePath).AddArgument($script:ToolLogPath)
-    [void]$initPS.Invoke()
-    $initPS.Dispose()
+    $script:BgRunspace = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
 }
 
 function Dispose-BgWork {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification='Dispose semantics intentional and reads as a single action.')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Tears down ephemeral runspace plumbing only.')]
     param()
-    if ($script:BgTimer)      { try { $script:BgTimer.Stop() }      catch { $null = $_ } ; $script:BgTimer = $null }
-    if ($script:BgPowerShell) {
-        try { [void]$script:BgPowerShell.Stop() } catch { $null = $_ }
-        try { $script:BgPowerShell.Dispose() }   catch { $null = $_ }
-        $script:BgPowerShell = $null
-    }
+    $script:BgGraveyard = @(Stop-SuiteBgWork -PowerShell $script:BgPowerShell -Timer $script:BgTimer -Graveyard $script:BgGraveyard)
+    $script:BgTimer = $null
+    $script:BgPowerShell = $null
     $script:BgInvokeHandle = $null
 }
 
@@ -1295,7 +1277,7 @@ function Show-NewCollectionDialog {
         $txtLimiting.Text = ('{0}  ({1})' -f $script:NewLimiting.Name, $script:NewLimiting.CollectionID)
     }
     $btnPickLimiting.Add_Click({
-        $picked = Show-CollectionPickerDialog -Title 'Pick Limiting Collection'
+        $picked = Show-CollectionPickerDialog -Owner $window -Collections $script:Collections -Folders $script:Folders -Title 'Pick Limiting Collection'
         if ($picked) {
             $script:NewLimiting = $picked
             $txtLimiting.Text = ('{0}  ({1})' -f $picked.Name, $picked.CollectionID)
@@ -1681,7 +1663,7 @@ function Show-ApplyTemplateDialog {
     $script:ApplyTarget = $null
     $btnPickTarget.Add_Click({
         # Built-ins (SMS prefix) can't host new query rules; filter them out.
-        $picked = Show-CollectionPickerDialog -Title 'Pick Target Collection' -IncludeBuiltIn $false
+        $picked = Show-CollectionPickerDialog -Owner $window -Collections $script:Collections -Folders $script:Folders -Title 'Pick Target Collection' -IncludeBuiltIn $false
         if ($picked) {
             $script:ApplyTarget = $picked
             $txtTarget.Text = ('{0}  ({1})' -f $picked.Name, $picked.CollectionID)
@@ -1826,230 +1808,6 @@ $btnExportHtml.Add_Click({
         Add-LogLine ('Exported HTML: {0}' -f $sfd.FileName)
     }
 })
-
-# =============================================================================
-# Tree builder used by both the inline WQL Editor TreeView and the modal
-# picker dialog. Mirrors the CM console's left-pane folder hierarchy via
-# SMS_ObjectContainerNode/Item. Returns the count of collection leaves that
-# survived the filter.
-# =============================================================================
-function Build-CollectionTree {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Mutates the in-window TreeView only.')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Justification='Build is the natural verb for tree assembly.')]
-    param(
-        [Parameter(Mandatory)][System.Windows.Controls.TreeView]$TreeView,
-        [Parameter(Mandatory)]$AllCollections,
-        $AllFolders,
-        [string]$Needle = ''
-    )
-
-    $colls   = @($AllCollections)
-    $folders = @($AllFolders)
-
-    $needleLower = ([string]$Needle).Trim().ToLowerInvariant()
-    $hasFilter   = -not [string]::IsNullOrWhiteSpace($needleLower)
-
-    $foldersByParent = @{}
-    foreach ($f in $folders) {
-        $parentId = [int]$f.ParentID
-        if (-not $foldersByParent.ContainsKey($parentId)) { $foldersByParent[$parentId] = @() }
-        $foldersByParent[$parentId] += $f
-    }
-    $collectionsByFolder = @{}
-    foreach ($c in $colls) {
-        $fid = [int]$c.FolderID
-        if (-not $collectionsByFolder.ContainsKey($fid)) { $collectionsByFolder[$fid] = @() }
-        $collectionsByFolder[$fid] += $c
-    }
-
-    $TreeView.Items.Clear()
-    $script:__TreeLeafCount = 0
-
-    $matchesNeedle = {
-        param($Coll)
-        if (-not $hasFilter) { return $true }
-        $name = ([string]$Coll.Name).ToLowerInvariant()
-        $id   = ([string]$Coll.CollectionID).ToLowerInvariant()
-        return ($name.Contains($needleLower) -or $id.Contains($needleLower))
-    }
-
-    $populate = {
-        param($ParentNode, [int]$FolderID)
-        $any = $false
-
-        $childFolders = if ($foldersByParent.ContainsKey($FolderID)) { @($foldersByParent[$FolderID] | Sort-Object Name) } else { @() }
-        foreach ($f in $childFolders) {
-            $folderNode = New-Object System.Windows.Controls.TreeViewItem
-            $folderNode.Header = ('[+] {0}' -f $f.Name)
-            $folderNode.Tag = @{ Type = 'Folder'; Object = $f }
-            $folderNode.FontWeight = [System.Windows.FontWeights]::SemiBold
-            if ($hasFilter) { $folderNode.IsExpanded = $true }
-            $hadAny = & $populate $folderNode ([int]$f.FolderID)
-            if ($hadAny -or -not $hasFilter) {
-                [void]$ParentNode.Items.Add($folderNode)
-                $any = $true
-            }
-        }
-
-        $childColls = if ($collectionsByFolder.ContainsKey($FolderID)) { @($collectionsByFolder[$FolderID] | Sort-Object Name) } else { @() }
-        foreach ($c in $childColls) {
-            if (-not (& $matchesNeedle $c)) { continue }
-            $collNode = New-Object System.Windows.Controls.TreeViewItem
-            $collNode.Header = ('{0}  ({1}, {2} members)' -f $c.Name, $c.CollectionID, $c.MemberCount)
-            $collNode.Tag = @{ Type = 'Collection'; Object = $c }
-            [void]$ParentNode.Items.Add($collNode)
-            $script:__TreeLeafCount++
-            $any = $true
-        }
-        return $any
-    }
-
-    & $populate $TreeView 0
-    return $script:__TreeLeafCount
-}
-
-# =============================================================================
-# Tree picker dialog. Used by the New Collection (limiting) and Apply Template
-# (target) modals; the WQL Editor view uses an inline tree instead.
-# =============================================================================
-function Show-CollectionPickerDialog {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Modal dialog show / dispose; reads as a single action.')]
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'IncludeBuiltIn', Justification='Surfaced as a flag now; consumed by the build closure later.')]
-    param(
-        [string]$Title = 'Pick Collection',
-        [bool]$IncludeBuiltIn = $true
-    )
-
-    if (-not $script:Collections -or @($script:Collections).Count -eq 0) {
-        Add-LogLine 'Picker: refresh first to load collections.'
-        return $null
-    }
-
-    $dlgXaml = @'
-<Controls:MetroWindow
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-    Title=""
-    Width="720" Height="640"
-    MinWidth="540" MinHeight="420"
-    WindowStartupLocation="CenterOwner"
-    TitleCharacterCasing="Normal"
-    GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
-    NonActiveGlowBrush="{DynamicResource MahApps.Brushes.Accent}"
-    BorderThickness="1"
-    ShowIconOnTitleBar="False">
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Steel.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
-                <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-            </Style>
-            <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
-                <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
-                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-            </Style>
-        </ResourceDictionary>
-    </Window.Resources>
-    <Grid Margin="16,12,16,12">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <TextBox x:Name="txtPickerFilter" Grid.Row="0" FontSize="12" Padding="6,4,6,4" Margin="0,4,0,8"
-                 Controls:TextBoxHelper.Watermark="Filter by collection name or ID..."/>
-        <Border Grid.Row="1" BorderThickness="1"
-                BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
-                Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
-            <TreeView x:Name="treePicker" FontSize="12"
-                      VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                      Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
-                      Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
-                      BorderThickness="0"/>
-        </Border>
-        <TextBlock x:Name="txtPickerStatus" Grid.Row="2" FontSize="11" Margin="0,8,0,0"
-                   Foreground="{DynamicResource MahApps.Brushes.Gray1}"
-                   Text="Pick a collection (folders are not selectable)."/>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button x:Name="btnOk"     Content="OK"     Style="{StaticResource DialogAccentButton}" IsDefault="True" IsEnabled="False"/>
-            <Button x:Name="btnCancel" Content="Cancel" Style="{StaticResource DialogButton}"        IsCancel="True"/>
-        </StackPanel>
-    </Grid>
-</Controls:MetroWindow>
-'@
-    [xml]$dx = $dlgXaml
-    $reader2 = New-Object System.Xml.XmlNodeReader $dx
-    $dlg = [System.Windows.Markup.XamlReader]::Load($reader2)
-    $dlg.Owner = $window
-    $dlg.Title = $Title
-    Install-TitleBarDragFallback -Window $dlg
-    Set-DialogTheme -Dialog $dlg
-
-    $txtPickerFilter = $dlg.FindName('txtPickerFilter')
-    $treePicker      = $dlg.FindName('treePicker')
-    $txtPickerStatus = $dlg.FindName('txtPickerStatus')
-    $btnOk           = $dlg.FindName('btnOk')
-    $btnCancel       = $dlg.FindName('btnCancel')
-
-    $allCollections = if ($IncludeBuiltIn) { $script:Collections } else { $script:Collections | Where-Object { -not $_.IsBuiltIn } }
-    $allCollections = @($allCollections)
-
-    $rebuildTree = {
-        param([string]$Needle)
-        $count = Build-CollectionTree -TreeView $treePicker `
-            -AllCollections $allCollections `
-            -AllFolders     $script:Folders `
-            -Needle         $Needle
-        if ([string]::IsNullOrWhiteSpace($Needle)) {
-            $totalColls = @($allCollections).Count
-            $totalFolders = @($script:Folders).Count
-            $txtPickerStatus.Text = ('{0} collections across {1} folders. Pick one (folders are not selectable).' -f $totalColls, $totalFolders)
-        } else {
-            $txtPickerStatus.Text = ('{0} collections match "{1}".' -f $count, $Needle.Trim())
-        }
-    }
-
-    & $rebuildTree ''
-
-    $script:PickerResult = $null
-    $treePicker.Add_SelectedItemChanged({
-        $node = $treePicker.SelectedItem
-        if (-not $node -or -not $node.Tag -or $node.Tag.Type -ne 'Collection') {
-            $btnOk.IsEnabled = $false
-            $script:PickerResult = $null
-            return
-        }
-        $btnOk.IsEnabled = $true
-        $script:PickerResult = $node.Tag.Object
-    })
-
-    $txtPickerFilter.Add_TextChanged({ & $rebuildTree ([string]$txtPickerFilter.Text) })
-
-    $btnOk.Add_Click({
-        if ($script:PickerResult) {
-            $dlg.DialogResult = $true
-            $dlg.Close()
-        }
-    })
-    $btnCancel.Add_Click({
-        $script:PickerResult = $null
-        $dlg.DialogResult = $false
-        $dlg.Close()
-    })
-
-    [void]$dlg.ShowDialog()
-    return $script:PickerResult
-}
 
 # =============================================================================
 # Options dialog -- Connection / About. Phase 6.
@@ -2209,11 +1967,8 @@ function Show-OptionsDialog {
 
         if ($connectionChanged) {
             Dispose-BgWork
-            if ($script:BgRunspace) {
-                try { $script:BgRunspace.Close() }   catch { $null = $_ }
-                try { $script:BgRunspace.Dispose() } catch { $null = $_ }
-                $script:BgRunspace = $null
-            }
+            Close-SuiteBgRunspace -Runspace $script:BgRunspace
+            $script:BgRunspace = $null
             $script:BgState           = $null
             $script:IsConnectedFromBg = $false
             $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
@@ -2242,10 +1997,7 @@ $global:WindowStatePath = Join-Path $PSScriptRoot 'CollectionManager.windowstate
 $window.Add_Closing({
     Save-WindowState -Window $window -Path $global:WindowStatePath -ExtraState @{ ActiveView = $script:ActiveView }
     Dispose-BgWork
-    if ($script:BgRunspace) {
-        try { $script:BgRunspace.Close() }  catch { $null = $_ }
-        try { $script:BgRunspace.Dispose() } catch { $null = $_ }
-    }
+    Close-SuiteBgRunspace -Runspace $script:BgRunspace
 })
 
 $window.Add_Loaded({
