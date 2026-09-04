@@ -18,7 +18,7 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 1.2.2
+    Version    : 1.2.3
     Updated    : 2026-05-04
 #>
 
@@ -122,6 +122,13 @@ $window = [System.Windows.Markup.XamlReader]::Load($reader)
 
 $txtAppTitle        = $window.FindName('txtAppTitle')
 $txtVersion         = $window.FindName('txtVersion')
+# Installed version: the script header is the single source of truth for the
+# sidebar label and the About panel.
+$script:AppVersion = '0.0.0'
+foreach ($headerLine in (Get-Content -LiteralPath $PSCommandPath -TotalCount 80)) {
+    if ($headerLine -match '^\s*Version\s*:\s*([0-9][0-9\.]*[0-9])\s*$') { $script:AppVersion = $Matches[1]; break }
+}
+if ($txtVersion) { $txtVersion.Text = 'v' + $script:AppVersion }
 $txtThemeLabel      = $window.FindName('txtThemeLabel')
 $toggleTheme        = $window.FindName('toggleTheme')
 
@@ -1938,6 +1945,8 @@ function Show-OptionsDialog {
     $btnCatAbout      = $dlg.FindName('btnCatAbout')
     $paneConnection   = $dlg.FindName('paneConnection')
     $paneAbout        = $dlg.FindName('paneAbout')
+    $txtAboutVersion  = $dlg.FindName('txtAboutVersion')
+    if ($txtAboutVersion) { $txtAboutVersion.Text = ($txtAboutVersion.Text -replace 'v[0-9][0-9\.]*[0-9]\s*$', ('v' + $script:AppVersion)) }
     $txtSiteCode      = $dlg.FindName('txtSiteCode')
     $txtSmsProvider   = $dlg.FindName('txtSmsProvider')
     $btnOk            = $dlg.FindName('btnOk')
