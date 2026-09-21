@@ -43,7 +43,7 @@
   {
     "Name": "Client Version",
     "Category": "Clients",
-    "Description": "Finds devices running a specific MECM client version",
+    "Description": "Finds devices running a specific Configuration Manager client version",
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '{VersionPattern}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
@@ -103,7 +103,7 @@
   {
     "Name": "Created Within N Days",
     "Category": "System Health",
-    "Description": "Finds devices whose MECM resource record was created within a specified number of days",
+    "Description": "Finds devices whose Configuration Manager resource record was created within a specified number of days",
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where DateDiff(dd,SMS_R_System.CreationDate,GetDate()) <= {Days}",
     "LimitingCollection": "All Systems",
     "Parameters": [
