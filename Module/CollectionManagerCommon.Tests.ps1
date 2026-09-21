@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Tests pure-logic functions: logging, template loading, parameter expansion,
-    export. Does NOT require MECM, WMI, or administrator elevation.
+    export. Does NOT require ConfigMgr, WMI, or administrator elevation.
 
 .EXAMPLE
     Invoke-Pester .\CollectionManagerCommon.Tests.ps1

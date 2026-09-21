@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Core module for MECM Collection Manager with Offline WQL Editor.
+    Core module for Collection Manager with Offline WQL Editor.
 
 .DESCRIPTION
     Import this module to get:
@@ -341,7 +341,7 @@ function Add-DirectMember {
 
     $device = Get-CMDevice -Name $DeviceName -ErrorAction SilentlyContinue
     if (-not $device) {
-        Write-Log "Device '$DeviceName' not found in MECM" -Level ERROR
+        Write-Log "Device '$DeviceName' not found in Configuration Manager" -Level ERROR
         return $false
     }
 
