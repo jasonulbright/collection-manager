@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CollectionManagerCommon.psm1'
-    ModuleVersion     = '2026.10.07.0010'
+    ModuleVersion     = '2026.10.07.0011'
     GUID              = '3f8e6a52-9d14-4c7b-b0e9-6a1d2c8f5b73'
     Author            = 'Jason Ulbright'
     Description       = 'Collection management and offline WQL editor for Configuration Manager device collections.'
@@ -14,6 +14,10 @@
         'Get-AllDeviceCollections'
         'Get-CollectionDetail'
         'Get-CollectionQueryRules'
+        'Get-SiteSavedQueries'
+        'New-SiteSavedQuery'
+        'Set-SiteSavedQuery'
+        'Remove-SiteSavedQuery'
         'Get-CollectionMembers'
 
         # Folder hierarchy

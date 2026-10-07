@@ -203,6 +203,103 @@ function Get-CollectionQueryRules {
     return $results
 }
 
+function ConvertTo-SiteSavedQueryInfo {
+    param([Parameter(Mandatory)]$Query)
+
+    return [PSCustomObject]@{
+        QueryID              = [string]$Query.QueryID
+        Name                 = [string]$Query.Name
+        Expression           = [string]$Query.Expression
+        Comment              = [string]$Query.Comments
+        TargetClassName      = [string]$Query.TargetClassName
+        LimitToCollectionID  = [string]$Query.LimitToCollectionID
+    }
+}
+
+function Get-SiteSavedQueries {
+    <#
+    .SYNOPSIS
+        Returns the reusable WQL queries saved in the Configuration Manager site.
+    #>
+    Write-Log 'Getting saved queries from the site...'
+    $queries = @(Get-CMQuery -ErrorAction Stop)
+    $results = foreach ($query in $queries) {
+        ConvertTo-SiteSavedQueryInfo -Query $query
+    }
+    $results = @($results | Sort-Object Name, QueryID)
+    Write-Log "Found $($results.Count) saved queries"
+    return $results
+}
+
+function New-SiteSavedQuery {
+    <#
+    .SYNOPSIS
+        Saves a new reusable WQL query in the Configuration Manager site.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Expression,
+        [string]$Comment = '',
+        [string]$TargetClassName = '',
+        [string]$LimitToCollectionId = ''
+    )
+
+    $params = @{
+        Name       = $Name
+        Expression = $Expression
+        ErrorAction = 'Stop'
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Comment)) { $params['Comment'] = $Comment }
+    if (-not [string]::IsNullOrWhiteSpace($TargetClassName)) { $params['TargetClassName'] = $TargetClassName }
+    if (-not [string]::IsNullOrWhiteSpace($LimitToCollectionId)) { $params['LimitToCollectionId'] = $LimitToCollectionId }
+
+    Write-Log "Saving site query '$Name'..."
+    $query = New-CMQuery @params
+    if (-not $query) {
+        $query = Get-CMQuery -Name $Name -DisableWildcardHandling -ErrorAction Stop |
+            Where-Object { [string]$_.Name -eq $Name } |
+            Select-Object -First 1
+    }
+    if (-not $query) { throw "Configuration Manager did not return the saved query '$Name'." }
+    return (ConvertTo-SiteSavedQueryInfo -Query $query)
+}
+
+function Set-SiteSavedQuery {
+    <#
+    .SYNOPSIS
+        Updates a saved site query's name, WQL, and metadata.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$QueryId,
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Expression,
+        [string]$Comment = '',
+        [string]$TargetClassName = '',
+        [string]$LimitToCollectionId = ''
+    )
+
+    Write-Log "Updating site query $QueryId..."
+    $query = Set-CMQuery -Id $QueryId -NewName $Name -Expression $Expression `
+        -Comment $Comment -TargetClassName $TargetClassName `
+        -LimitToCollectionId $LimitToCollectionId -PassThru -ErrorAction Stop
+    if (-not $query) { $query = Get-CMQuery -Id $QueryId -ErrorAction Stop }
+    if (-not $query) { throw "Configuration Manager did not return the updated query '$QueryId'." }
+    return (ConvertTo-SiteSavedQueryInfo -Query $query)
+}
+
+function Remove-SiteSavedQuery {
+    <#
+    .SYNOPSIS
+        Deletes a reusable WQL query from the Configuration Manager site.
+    #>
+    param([Parameter(Mandatory)][string]$QueryId)
+
+    Write-Log "Removing site query $QueryId..."
+    Remove-CMQuery -Id $QueryId -Force -ErrorAction Stop
+    Write-Log "Removed site query $QueryId"
+    return $true
+}
+
 function Get-CollectionMembers {
     <#
     .SYNOPSIS

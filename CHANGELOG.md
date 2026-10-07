@@ -3,6 +3,13 @@
 All notable changes to Collection Manager are documented in this
 file.
 
+## [2026.10.07.0011] - 2026-10-07
+
+### Added
+
+- Manage reusable site WQL queries from the WQL Editor: load, create, update, and delete saved queries, including their comments and query metadata.
+- Load a saved site query into the editor and add its WQL as a membership rule on the selected collection.
+
 ## [2026.10.07.0010] - 2026-10-07
 
 ### Changed

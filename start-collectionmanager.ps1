@@ -18,7 +18,7 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 2026.10.07.0010
+    Version    : 2026.10.07.0011
     Updated    : 2026-10-07
 #>
 
@@ -173,6 +173,18 @@ $btnRemoveColl     = $window.FindName('btnRemoveColl')
 $txtWqlTreeFilter      = $window.FindName('txtWqlTreeFilter')
 $txtWqlCollectionId    = $window.FindName('txtWqlCollectionId')
 $btnOpenWqlCollection  = $window.FindName('btnOpenWqlCollection')
+$tabSiteQueries        = $window.FindName('tabSiteQueries')
+$txtSavedQueryFilter   = $window.FindName('txtSavedQueryFilter')
+$gridSavedQueries      = $window.FindName('gridSavedQueries')
+$txtSavedQueryName     = $window.FindName('txtSavedQueryName')
+$txtSavedQueryComment  = $window.FindName('txtSavedQueryComment')
+$txtSavedQueryTargetClass = $window.FindName('txtSavedQueryTargetClass')
+$txtSavedQueryLimitId  = $window.FindName('txtSavedQueryLimitId')
+$btnRefreshSavedQueries = $window.FindName('btnRefreshSavedQueries')
+$btnLoadSavedQuery     = $window.FindName('btnLoadSavedQuery')
+$btnSaveSiteQuery      = $window.FindName('btnSaveSiteQuery')
+$btnUpdateSiteQuery    = $window.FindName('btnUpdateSiteQuery')
+$btnDeleteSiteQuery    = $window.FindName('btnDeleteSiteQuery')
 $treeWqlCollections    = $window.FindName('treeWqlCollections')
 $txtSelectedColl       = $window.FindName('txtSelectedColl')
 $lstWqlRules           = $window.FindName('lstWqlRules')
@@ -285,7 +297,7 @@ $toggleTheme.Add_Toggled({
 # =============================================================================
 $script:ViewMeta = @{
     'Collections' = @{ Title = 'Collections'; Subtitle = 'Connect to the site for collection and query actions. Refresh loads the full collection inventory.' }
-    'WQL Editor'  = @{ Title = 'WQL Editor';  Subtitle = 'Open one collection by ID or refresh the full inventory. Connect to validate, preview, and edit query rules.' }
+    'WQL Editor'  = @{ Title = 'WQL Editor';  Subtitle = 'Open one collection by ID, load saved site queries, or refresh the full inventory. Connect to validate and edit WQL.' }
     'Templates'   = @{ Title = 'Templates';   Subtitle = '157 ready-made operational queries plus 20 parameterized templates. Apply to a collection or copy into the WQL Editor.' }
 }
 
@@ -376,6 +388,10 @@ $script:FolderById           = @{}
 $script:LastRefreshTime      = $null
 $script:IsConnected          = $false
 $script:CollectionInventoryLoaded = $false
+$script:SiteSavedQueries = @()
+$script:SiteSavedQueriesLoaded = $false
+$script:SelectedSiteSavedQueryId = ''
+$script:LoadedSiteSavedQueryId = ''
 
 $script:OperationalTemplates    = @()
 $script:ParameterizedTemplates  = @()
@@ -709,8 +725,225 @@ function Add-CollectionToWqlTree {
     [void]$treeWqlCollections.Items.Add($node)
 }
 
+function Update-SiteSavedQueryList {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Filters the in-window saved-query list only.')]
+    param([string]$SelectQueryId = $script:SelectedSiteSavedQueryId)
+
+    if (-not $gridSavedQueries) { return }
+    $needle = ([string]$txtSavedQueryFilter.Text).Trim()
+    $rows = if ($needle) {
+        @($script:SiteSavedQueries | Where-Object {
+            ([string]$_.Name).IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+            ([string]$_.QueryID).IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+            ([string]$_.Comment).IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+        })
+    } else {
+        @($script:SiteSavedQueries)
+    }
+
+    $gridSavedQueries.ItemsSource = $rows
+    if ($SelectQueryId) {
+        $selected = $rows | Where-Object { [string]$_.QueryID -eq $SelectQueryId } | Select-Object -First 1
+        if ($selected) {
+            $gridSavedQueries.SelectedItem = $selected
+            $gridSavedQueries.ScrollIntoView($selected)
+            return
+        }
+    }
+    $gridSavedQueries.SelectedItem = $null
+    $script:SelectedSiteSavedQueryId = ''
+}
+
+function Refresh-SiteSavedQueries {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Refreshes the saved-query list from the connected site.')]
+    param([string]$SelectQueryId = $script:SelectedSiteSavedQueryId)
+
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site before loading saved queries.'
+        return $false
+    }
+    try {
+        $script:SiteSavedQueries = @(Get-SiteSavedQueries)
+        $script:SiteSavedQueriesLoaded = $true
+        Update-SiteSavedQueryList -SelectQueryId $SelectQueryId
+        $txtWqlValidation.Text = ('Loaded {0} saved site queries.' -f $script:SiteSavedQueries.Count)
+        Add-LogLine $txtWqlValidation.Text
+        return $true
+    } catch {
+        $script:SiteSavedQueriesLoaded = $false
+        $txtWqlValidation.Text = ('Could not load saved site queries: {0}' -f $_.Exception.Message)
+        Add-LogLine $txtWqlValidation.Text
+        return $false
+    }
+}
+
+function Load-SelectedSiteSavedQuery {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Loads one saved query into the in-window WQL editor.')]
+    param()
+
+    $query = $gridSavedQueries.SelectedItem
+    if (-not $query) {
+        $txtWqlValidation.Text = 'Select a saved site query first.'
+        return $false
+    }
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site before loading saved queries.'
+        return $false
+    }
+
+    $txtSavedQueryName.Text = [string]$query.Name
+    $txtSavedQueryComment.Text = [string]$query.Comment
+    $txtSavedQueryTargetClass.Text = [string]$query.TargetClassName
+    $txtSavedQueryLimitId.Text = [string]$query.LimitToCollectionID
+    $txtWqlEditor.Text = [string]$query.Expression
+    if ([string]::IsNullOrWhiteSpace([string]$txtRuleName.Text)) { $txtRuleName.Text = [string]$query.Name }
+    $script:LoadedSiteSavedQueryId = [string]$query.QueryID
+    $txtWqlValidation.Text = ('Loaded site query "{0}". Add Rule applies its WQL to the selected collection.' -f $query.Name)
+    Add-LogLine $txtWqlValidation.Text
+    return $true
+}
+
+function Save-NewSiteSavedQuery {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Creates a saved WQL query on the connected Configuration Manager site.')]
+    param()
+
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site before saving a site query.'
+        return $false
+    }
+    $name = ([string]$txtSavedQueryName.Text).Trim()
+    $expression = ([string]$txtWqlEditor.Text).Trim()
+    if (-not $name -or -not $expression) {
+        $txtWqlValidation.Text = 'Enter a saved query name and WQL before saving.'
+        return $false
+    }
+
+    try {
+        $query = New-SiteSavedQuery -Name $name -Expression $expression `
+            -Comment ([string]$txtSavedQueryComment.Text) `
+            -TargetClassName ([string]$txtSavedQueryTargetClass.Text).Trim() `
+            -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
+        $script:LoadedSiteSavedQueryId = [string]$query.QueryID
+        $script:SelectedSiteSavedQueryId = [string]$query.QueryID
+        if (Refresh-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+            $txtWqlValidation.Text = ('Saved "{0}" to the site. Load it later or use Add Rule for a collection.' -f $query.Name)
+            Add-LogLine $txtWqlValidation.Text
+        }
+        return $true
+    } catch {
+        $txtWqlValidation.Text = ('Save site query failed: {0}' -f $_.Exception.Message)
+        Add-LogLine $txtWqlValidation.Text
+        return $false
+    }
+}
+
+function Update-SelectedSiteSavedQuery {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Updates a selected saved WQL query on the connected site.')]
+    param()
+
+    $selected = $gridSavedQueries.SelectedItem
+    if (-not $selected) {
+        $txtWqlValidation.Text = 'Select a saved site query to update.'
+        return $false
+    }
+    if ([string]$selected.QueryID -ne $script:LoadedSiteSavedQueryId) {
+        $txtWqlValidation.Text = 'Load the selected site query to the editor before updating it.'
+        return $false
+    }
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site before updating a site query.'
+        return $false
+    }
+
+    $name = ([string]$txtSavedQueryName.Text).Trim()
+    $expression = ([string]$txtWqlEditor.Text).Trim()
+    if (-not $name -or -not $expression) {
+        $txtWqlValidation.Text = 'Enter a saved query name and WQL before updating.'
+        return $false
+    }
+
+    try {
+        $query = Set-SiteSavedQuery -QueryId ([string]$selected.QueryID) -Name $name `
+            -Expression $expression -Comment ([string]$txtSavedQueryComment.Text) `
+            -TargetClassName ([string]$txtSavedQueryTargetClass.Text).Trim() `
+            -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
+        $script:LoadedSiteSavedQueryId = [string]$query.QueryID
+        $script:SelectedSiteSavedQueryId = [string]$query.QueryID
+        if (Refresh-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+            $txtWqlValidation.Text = ('Updated saved site query "{0}".' -f $query.Name)
+            Add-LogLine $txtWqlValidation.Text
+        }
+        return $true
+    } catch {
+        $txtWqlValidation.Text = ('Update site query failed: {0}' -f $_.Exception.Message)
+        Add-LogLine $txtWqlValidation.Text
+        return $false
+    }
+}
+
+function Delete-SelectedSiteSavedQuery {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Deletes a selected saved WQL query after an explicit confirmation.')]
+    param()
+
+    $query = $gridSavedQueries.SelectedItem
+    if (-not $query) {
+        $txtWqlValidation.Text = 'Select a saved site query to delete.'
+        return $false
+    }
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site before deleting a site query.'
+        return $false
+    }
+    if (-not (Show-ConfirmDialog -Title 'Delete Saved Query' -Message ("Delete the saved query '$($query.Name)' ($($query.QueryID)) from the site?") -Owner $window)) {
+        return $false
+    }
+
+    try {
+        Remove-SiteSavedQuery -QueryId ([string]$query.QueryID) | Out-Null
+        if ($script:LoadedSiteSavedQueryId -eq [string]$query.QueryID) { $script:LoadedSiteSavedQueryId = '' }
+        $script:SelectedSiteSavedQueryId = ''
+        $txtSavedQueryName.Clear()
+        $txtSavedQueryComment.Clear()
+        $txtSavedQueryTargetClass.Clear()
+        $txtSavedQueryLimitId.Clear()
+        if (Refresh-SiteSavedQueries -SelectQueryId '') {
+            $txtWqlValidation.Text = ('Deleted saved site query "{0}".' -f $query.Name)
+            Add-LogLine $txtWqlValidation.Text
+        }
+        return $true
+    } catch {
+        $txtWqlValidation.Text = ('Delete site query failed: {0}' -f $_.Exception.Message)
+        Add-LogLine $txtWqlValidation.Text
+        return $false
+    }
+}
+
 $txtWqlTreeFilter.Add_TextChanged({
     Update-WqlTreeFromState -Needle ([string]$txtWqlTreeFilter.Text)
+})
+
+$txtSavedQueryFilter.Add_TextChanged({ Update-SiteSavedQueryList })
+$gridSavedQueries.Add_SelectionChanged({
+    $query = $gridSavedQueries.SelectedItem
+    if (-not $query) {
+        $script:SelectedSiteSavedQueryId = ''
+        return
+    }
+    $script:SelectedSiteSavedQueryId = [string]$query.QueryID
+    $txtSavedQueryName.Text = [string]$query.Name
+    $txtSavedQueryComment.Text = [string]$query.Comment
+    $txtSavedQueryTargetClass.Text = [string]$query.TargetClassName
+    $txtSavedQueryLimitId.Text = [string]$query.LimitToCollectionID
+})
+$btnRefreshSavedQueries.Add_Click({ [void](Refresh-SiteSavedQueries -SelectQueryId '') })
+$btnLoadSavedQuery.Add_Click({ [void](Load-SelectedSiteSavedQuery) })
+$btnSaveSiteQuery.Add_Click({ [void](Save-NewSiteSavedQuery) })
+$btnUpdateSiteQuery.Add_Click({ [void](Update-SelectedSiteSavedQuery) })
+$btnDeleteSiteQuery.Add_Click({ [void](Delete-SelectedSiteSavedQuery) })
+$tabSiteQueries.Add_Selected({
+    if ($script:IsConnected -and -not $script:SiteSavedQueriesLoaded) {
+        [void](Refresh-SiteSavedQueries -SelectQueryId '')
+    }
 })
 
 $treeWqlCollections.Add_SelectedItemChanged({
@@ -2392,6 +2625,15 @@ function Show-OptionsDialog {
             $script:FolderById        = @{}
             $script:LastRefreshTime   = $null
             $script:WqlSelectedCollection = $null
+            $script:SiteSavedQueries = @()
+            $script:SiteSavedQueriesLoaded = $false
+            $script:SelectedSiteSavedQueryId = ''
+            $script:LoadedSiteSavedQueryId = ''
+            $gridSavedQueries.ItemsSource = @()
+            $txtSavedQueryName.Clear()
+            $txtSavedQueryComment.Clear()
+            $txtSavedQueryTargetClass.Clear()
+            $txtSavedQueryLimitId.Clear()
             $gridCollections.ItemsSource = @()
             Apply-WqlCollectionSelection -Collection $null
             Update-WqlTreeFromState
