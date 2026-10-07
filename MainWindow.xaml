@@ -234,7 +234,7 @@
                 <StackPanel>
                     <TextBlock x:Name="txtModuleTitle" Text="Collections" FontSize="18" FontWeight="SemiBold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
-                               Text="Configure Site / Provider in Options, then click Refresh."
+                               Text="Connect for query and collection work. Refresh loads the full collection inventory."
                                FontSize="11"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource MahApps.Brushes.Gray1}"
@@ -252,12 +252,19 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <Button x:Name="btnRefresh"
-                            Grid.Column="0"
-                            Content="Refresh"
-                            Style="{StaticResource SquareInlineButtonStyle}"
-                            MinWidth="120"
-                            ToolTip="Reload from Configuration Manager (or, on the Templates view, reload templates from disk)"/>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button x:Name="btnConnect"
+                                Content="Connect Site"
+                                Style="{StaticResource SquareInlineButtonStyle}"
+                                MinWidth="120"
+                                Margin="0,0,8,0"
+                                ToolTip="Connect to the configured site without loading the collection inventory"/>
+                        <Button x:Name="btnRefresh"
+                                Content="Refresh"
+                                Style="{StaticResource SquareInlineButtonStyle}"
+                                MinWidth="120"
+                                ToolTip="Load the full collection inventory (or, on the Templates view, reload templates from disk)"/>
+                    </StackPanel>
 
                     <TextBox x:Name="txtFilter"
                              Grid.Column="1"
@@ -416,6 +423,17 @@
 
                     <!-- LEFT: full-height collection tree (folder hierarchy) -->
                     <DockPanel Grid.Column="0" Margin="0,0,0,0">
+                        <Grid DockPanel.Dock="Top" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="txtWqlCollectionId" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
+                                     Controls:TextBoxHelper.Watermark="Collection ID (open one collection)"/>
+                            <Button x:Name="btnOpenWqlCollection" Grid.Column="1" Content="Open by ID"
+                                    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
+                                    ToolTip="Load one collection and its query rules without scanning the site"/>
+                        </Grid>
                         <TextBox x:Name="txtWqlTreeFilter" DockPanel.Dock="Top" FontSize="12" Padding="6,4,6,4" Margin="0,8,0,8"
                                  Controls:TextBoxHelper.Watermark="Filter collections by name or ID..."/>
                         <Border BorderThickness="1"

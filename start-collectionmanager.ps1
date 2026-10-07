@@ -18,8 +18,8 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 2026.09.21.0009
-    Updated    : 2026-09-21
+    Version    : 2026.10.07.0010
+    Updated    : 2026-10-07
 #>
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification='Per feedback_ps_wpf_handler_rules.md and PS51-WPF-001..003: flat-.ps1 GetNewClosure strips $script: scope. $global: survives closure scope-strip and keeps shared mutable state reachable from closure-captured handlers.')]
@@ -145,6 +145,7 @@ $btnOptions         = $window.FindName('btnOptions')
 $txtModuleTitle    = $window.FindName('txtModuleTitle')
 $txtModuleSubtitle = $window.FindName('txtModuleSubtitle')
 
+$btnConnect           = $window.FindName('btnConnect')
 $btnRefresh           = $window.FindName('btnRefresh')
 $txtFilter            = $window.FindName('txtFilter')
 $cboCollectionFilter  = $window.FindName('cboCollectionFilter')
@@ -170,6 +171,8 @@ $btnEvaluateColl   = $window.FindName('btnEvaluateColl')
 $btnRemoveColl     = $window.FindName('btnRemoveColl')
 
 $txtWqlTreeFilter      = $window.FindName('txtWqlTreeFilter')
+$txtWqlCollectionId    = $window.FindName('txtWqlCollectionId')
+$btnOpenWqlCollection  = $window.FindName('btnOpenWqlCollection')
 $treeWqlCollections    = $window.FindName('treeWqlCollections')
 $txtSelectedColl       = $window.FindName('txtSelectedColl')
 $lstWqlRules           = $window.FindName('lstWqlRules')
@@ -281,8 +284,8 @@ $toggleTheme.Add_Toggled({
 # View switching.
 # =============================================================================
 $script:ViewMeta = @{
-    'Collections' = @{ Title = 'Collections'; Subtitle = 'All device collections in the site. Configure Site / Provider in Options, then click Refresh.' }
-    'WQL Editor'  = @{ Title = 'WQL Editor';  Subtitle = 'Edit query rules on a selected collection. Validate syntax and preview matches before committing.' }
+    'Collections' = @{ Title = 'Collections'; Subtitle = 'Connect to the site for collection and query actions. Refresh loads the full collection inventory.' }
+    'WQL Editor'  = @{ Title = 'WQL Editor';  Subtitle = 'Open one collection by ID or refresh the full inventory. Connect to validate, preview, and edit query rules.' }
     'Templates'   = @{ Title = 'Templates';   Subtitle = '157 ready-made operational queries plus 20 parameterized templates. Apply to a collection or copy into the WQL Editor.' }
 }
 
@@ -304,6 +307,7 @@ function Set-ActiveView {
 
     Update-SidebarButtonTheme
     Update-ActionBarVisibility
+    if ($View -eq 'WQL Editor') { Update-WqlTreeFromState -Needle ([string]$txtWqlTreeFilter.Text) }
     Update-Filter
     Update-StatusBarSummary
 }
@@ -367,8 +371,11 @@ function Get-CollectionTypeGlyph {
 $script:Collections          = @()         # decorated for grid (with TypeGlyph)
 $script:RawCollections       = @()         # raw module output
 $script:CollectionRulesIndex = @{}         # CollectionID -> @{ Direct=[]; Query=[]; Include=[]; Exclude=[] }
+$script:Folders              = @()
+$script:FolderById           = @{}
 $script:LastRefreshTime      = $null
-$script:IsConnectedFromBg    = $false
+$script:IsConnected          = $false
+$script:CollectionInventoryLoaded = $false
 
 $script:OperationalTemplates    = @()
 $script:ParameterizedTemplates  = @()
@@ -394,7 +401,7 @@ function Update-ActionBarVisibility {
             $txtFilter.Tag                  = 'Filter by name, ID, or comment...'
         }
         'WQL Editor' {
-            # Hide every action-bar control except Refresh: the in-view tree's
+            # Hide every action-bar control except connection and Refresh: the in-view tree's
             # own filter textbox handles collection filtering on this view, so
             # the wide global filter would just steal real estate at the top.
             $cboCollectionFilter.Visibility = [System.Windows.Visibility]::Collapsed
@@ -422,15 +429,17 @@ function Update-StatusBarSummary {
     param()
 
     $parts = @()
-    if ($script:IsConnectedFromBg -and $global:Prefs.SiteCode) {
+    if ($script:IsConnected -and $global:Prefs.SiteCode) {
         $parts += "Connected to $($global:Prefs.SiteCode)"
     } elseif (-not $global:Prefs.SiteCode -or -not $global:Prefs.SMSProvider) {
         $parts += 'Open Options to configure site code and SMS provider'
     } else {
-        $parts += 'Ready. Click Refresh.'
+        $parts += 'Connect to the site, or refresh to load the collection inventory.'
     }
-    if ($script:RawCollections -and @($script:RawCollections).Count -gt 0) {
+    if ($script:CollectionInventoryLoaded) {
         $parts += ('{0} collections' -f @($script:RawCollections).Count)
+    } elseif ($script:Collections -and @($script:Collections).Count -gt 0) {
+        $parts += ('{0} targeted collection(s)' -f @($script:Collections).Count)
     }
     if ($script:OperationalTemplates -and @($script:OperationalTemplates).Count -gt 0) {
         $parts += ('{0} op templates' -f @($script:OperationalTemplates).Count)
@@ -598,15 +607,106 @@ function Apply-WqlCollectionSelection {
 function Update-WqlTreeFromState {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Rebuilds the in-window WQL TreeView only.')]
     param([string]$Needle = '')
-    if (-not $treeWqlCollections) { return }
+    if (-not $treeWqlCollections -or $script:ActiveView -ne 'WQL Editor') { return }
     if (-not $script:Collections -or @($script:Collections).Count -eq 0) {
         $treeWqlCollections.Items.Clear()
         return
     }
-    Build-CollectionTree -TreeView $treeWqlCollections `
-        -AllCollections $script:Collections `
-        -AllFolders     $script:Folders `
-        -Needle         $Needle
+
+    $needleLower = ([string]$Needle).Trim().ToLowerInvariant()
+    $hasFilter = -not [string]::IsNullOrWhiteSpace($needleLower)
+    if (-not $hasFilter -and @($script:Collections).Count -gt 1000) {
+        $treeWqlCollections.Items.Clear()
+        $hint = New-Object System.Windows.Controls.TreeViewItem
+        $hint.Header = ('{0} collections loaded. Filter above or open one by ID.' -f @($script:Collections).Count)
+        $hint.IsHitTestVisible = $false
+        [void]$treeWqlCollections.Items.Add($hint)
+        return 0
+    }
+
+    # Build the hierarchy only while the WQL view is visible. Use lists for
+    # buckets so a site with thousands of root collections does not repeatedly
+    # copy an ever-growing PowerShell array during a refresh.
+    $foldersByParent = @{}
+    foreach ($folder in @($script:Folders)) {
+        $parentId = [int]$folder.ParentID
+        if (-not $foldersByParent.ContainsKey($parentId)) {
+            $foldersByParent[$parentId] = New-Object 'System.Collections.Generic.List[object]'
+        }
+        $foldersByParent[$parentId].Add($folder)
+    }
+
+    $collectionsByFolder = @{}
+    foreach ($collection in @($script:Collections)) {
+        $folderId = [int]$collection.FolderID
+        if (-not $collectionsByFolder.ContainsKey($folderId)) {
+            $collectionsByFolder[$folderId] = New-Object 'System.Collections.Generic.List[object]'
+        }
+        $collectionsByFolder[$folderId].Add($collection)
+    }
+
+    $treeWqlCollections.Items.Clear()
+    $script:WqlTreeLeafCount = 0
+
+    $populate = {
+        param($ParentNode, [int]$FolderId)
+        $any = $false
+        $childFolders = if ($foldersByParent.ContainsKey($FolderId)) {
+            @($foldersByParent[$FolderId].ToArray() | Sort-Object Name)
+        } else { @() }
+        foreach ($folder in $childFolders) {
+            $folderNode = New-Object System.Windows.Controls.TreeViewItem
+            $folderNode.Header = ('[+] {0}' -f $folder.Name)
+            $folderNode.Tag = @{ Type = 'Folder'; Object = $folder }
+            $folderNode.FontWeight = [System.Windows.FontWeights]::SemiBold
+            if ($hasFilter) { $folderNode.IsExpanded = $true }
+            $hadAny = & $populate $folderNode ([int]$folder.FolderID)
+            if ($hadAny -or -not $hasFilter) {
+                [void]$ParentNode.Items.Add($folderNode)
+                $any = $true
+            }
+        }
+
+        $childCollections = if ($collectionsByFolder.ContainsKey($FolderId)) {
+            @($collectionsByFolder[$FolderId].ToArray() | Sort-Object Name)
+        } else { @() }
+        foreach ($collection in $childCollections) {
+            if ($hasFilter) {
+                $name = ([string]$collection.Name).ToLowerInvariant()
+                $id = ([string]$collection.CollectionID).ToLowerInvariant()
+                if (-not $name.Contains($needleLower) -and -not $id.Contains($needleLower)) { continue }
+            }
+            $node = New-Object System.Windows.Controls.TreeViewItem
+            $node.Header = ('{0}  ({1}, {2} members)' -f $collection.Name, $collection.CollectionID, $collection.MemberCount)
+            $node.Tag = @{ Type = 'Collection'; Object = $collection }
+            [void]$ParentNode.Items.Add($node)
+            $script:WqlTreeLeafCount++
+            $any = $true
+        }
+        return $any
+    }
+    $null = & $populate $treeWqlCollections 0
+    return $script:WqlTreeLeafCount
+}
+
+function Add-CollectionToWqlTree {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Adds one targeted collection node to the visible WQL tree.')]
+    param([Parameter(Mandatory)]$Collection)
+
+    if (-not $treeWqlCollections -or $script:ActiveView -ne 'WQL Editor') { return }
+    $needle = ([string]$txtWqlTreeFilter.Text).Trim().ToLowerInvariant()
+    if ($needle) {
+        $name = ([string]$Collection.Name).ToLowerInvariant()
+        $id = ([string]$Collection.CollectionID).ToLowerInvariant()
+        if (-not $name.Contains($needle) -and -not $id.Contains($needle)) { return }
+    }
+    foreach ($node in $treeWqlCollections.Items) {
+        if ($node.Tag -and $node.Tag.Type -eq 'Collection' -and [string]$node.Tag.Object.CollectionID -eq [string]$Collection.CollectionID) { return }
+    }
+    $node = New-Object System.Windows.Controls.TreeViewItem
+    $node.Header = ('{0}  ({1}, {2} members)' -f $Collection.Name, $Collection.CollectionID, $Collection.MemberCount)
+    $node.Tag = @{ Type = 'Collection'; Object = $Collection }
+    [void]$treeWqlCollections.Items.Add($node)
 }
 
 $txtWqlTreeFilter.Add_TextChanged({
@@ -742,6 +842,96 @@ function Dispose-BgWork {
     $script:BgInvokeHandle = $null
 }
 
+function Invoke-ConnectSite {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Starts a background Configuration Manager connection check only.')]
+    param()
+
+    if (-not $global:Prefs.SiteCode -or -not $global:Prefs.SMSProvider) {
+        Add-LogLine 'Connect: site code and SMS provider must be set in Options first.'
+        Set-StatusText 'Open Options to configure site code and SMS provider, then connect.'
+        return
+    }
+
+    Initialize-BgRunspace
+    Dispose-BgWork
+    $script:BgState = [hashtable]::Synchronized(@{
+        Step     = 'Connecting...'
+        Done     = $false
+        Result   = $false
+        ErrorMsg = $null
+    })
+
+    $btnConnect.IsEnabled = $false
+    $btnRefresh.IsEnabled = $false
+    $txtProgressTitle.Text = 'Connecting to site'
+    $txtProgressStep.Text  = 'Connecting...'
+    $progressOverlay.Visibility = [System.Windows.Visibility]::Visible
+    Add-LogLine ('Connect: site={0} provider={1}' -f $global:Prefs.SiteCode, $global:Prefs.SMSProvider)
+    Set-StatusText 'Connecting to Configuration Manager...'
+
+    $siteCode    = [string]$global:Prefs.SiteCode
+    $smsProvider = [string]$global:Prefs.SMSProvider
+    $script:BgPowerShell = [powershell]::Create()
+    $script:BgPowerShell.Runspace = $script:BgRunspace
+    [void]$script:BgPowerShell.AddScript({
+        param($SiteCode, $SMSProvider, $State)
+        try {
+            $State.Step = "Verifying site $SiteCode..."
+            $State.Result = [bool](Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider)
+            if (-not $State.Result) { $State.ErrorMsg = "Failed to connect to site $SiteCode (provider $SMSProvider)." }
+        } catch {
+            $State.ErrorMsg = $_.Exception.Message
+        } finally {
+            $State.Done = $true
+        }
+    }).AddArgument($siteCode).AddArgument($smsProvider).AddArgument($script:BgState)
+
+    $script:BgInvokeHandle = $script:BgPowerShell.BeginInvoke()
+    $script:BgTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:BgTimer.Interval = [TimeSpan]::FromMilliseconds(150)
+    $script:BgTimer.Add_Tick({
+        if ($script:BgState) {
+            $current = [string]$script:BgState.Step
+            if ($txtProgressStep.Text -ne $current) { $txtProgressStep.Text = $current }
+        }
+        if ($script:BgState -and $script:BgState.Done) {
+            $script:BgTimer.Stop()
+            try { [void]$script:BgPowerShell.EndInvoke($script:BgInvokeHandle) } catch { $null = $_ }
+            try { $script:BgPowerShell.Dispose() } catch { $null = $_ }
+            $script:BgPowerShell   = $null
+            $script:BgInvokeHandle = $null
+
+            $connected = [bool]$script:BgState.Result -and -not $script:BgState.ErrorMsg
+            if ($connected) {
+                # Each runspace owns its CMSite drive. Mirror the verified site
+                # session into the UI runspace so collection actions can run.
+                try {
+                    $connected = [bool](Connect-CMSite -SiteCode $global:Prefs.SiteCode -SMSProvider $global:Prefs.SMSProvider)
+                    if (-not $connected) { throw 'The UI session could not connect to the configured site.' }
+                } catch {
+                    $script:BgState.ErrorMsg = $_.Exception.Message
+                    $connected = $false
+                }
+            }
+
+            $script:IsConnected = $connected
+            $btnConnect.Content = if ($connected) { 'Test Connection' } else { 'Connect Site' }
+            $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
+            $btnConnect.IsEnabled = $true
+            $btnRefresh.IsEnabled = $true
+            if ($connected) {
+                Add-LogLine ('Connected to site {0}; collection inventory was not loaded.' -f $global:Prefs.SiteCode)
+                Set-StatusText ('Connected to {0}. Refresh loads the collection inventory.' -f $global:Prefs.SiteCode)
+            } else {
+                Add-LogLine ('Connect failed: {0}' -f $script:BgState.ErrorMsg)
+                Set-StatusText 'Connection failed.'
+            }
+            Update-StatusBarSummary
+        }
+    })
+    $script:BgTimer.Start()
+}
+
 function Invoke-Refresh {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Posts work to the background runspace and arms a DispatcherTimer.')]
     param()
@@ -762,12 +952,14 @@ function Invoke-Refresh {
     Dispose-BgWork
 
     $script:BgState = [hashtable]::Synchronized(@{
-        Step     = 'Connecting...'
-        Done     = $false
-        Result   = $null
-        ErrorMsg = $null
+        Step      = 'Connecting...'
+        Done      = $false
+        Result    = $null
+        Connected = $false
+        ErrorMsg  = $null
     })
 
+    $btnConnect.IsEnabled = $false
     $btnRefresh.IsEnabled = $false
     $txtProgressTitle.Text = 'Loading collections'
     $txtProgressStep.Text  = 'Connecting...'
@@ -783,14 +975,13 @@ function Invoke-Refresh {
     [void]$script:BgPowerShell.AddScript({
         param($SiteCode, $SMSProvider, $State)
         try {
-            if (-not (Test-CMConnection)) {
-                $State.Step = "Connecting to $SiteCode..."
-                $ok = Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider
-                if (-not $ok) {
-                    $State.ErrorMsg = "Failed to connect to site $SiteCode (provider $SMSProvider)."
-                    return
-                }
+            $State.Step = "Verifying site $SiteCode..."
+            $ok = Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider
+            if (-not $ok) {
+                $State.ErrorMsg = "Failed to connect to site $SiteCode (provider $SMSProvider)."
+                return
             }
+            $State.Connected = $true
 
             $State.Step = 'Loading folder hierarchy...'
             $folders   = @()
@@ -816,10 +1007,10 @@ function Invoke-Refresh {
             $State.Step = ('Parsing rules for {0} collections...' -f $collections.Count)
             $rulesIndex = @{}
             foreach ($c in $collections) {
-                $direct  = @()
-                $query   = @()
-                $include = @()
-                $exclude = @()
+                $direct  = New-Object 'System.Collections.Generic.List[object]'
+                $query   = New-Object 'System.Collections.Generic.List[object]'
+                $include = New-Object 'System.Collections.Generic.List[object]'
+                $exclude = New-Object 'System.Collections.Generic.List[object]'
 
                 foreach ($r in @($c.CollectionRules)) {
                     if ($null -eq $r) { continue }
@@ -830,38 +1021,38 @@ function Invoke-Refresh {
                     }
                     switch -Wildcard ($typeName) {
                         '*RuleDirect*' {
-                            $direct += [PSCustomObject]@{
+                            $direct.Add([PSCustomObject]@{
                                 Name       = $r.RuleName
                                 ResourceID = $r.ResourceID
                                 Domain     = ''
-                            }
+                            })
                         }
                         '*RuleQuery*' {
-                            $query += [PSCustomObject]@{
+                            $query.Add([PSCustomObject]@{
                                 RuleName        = $r.RuleName
                                 QueryExpression = $r.QueryExpression
-                            }
+                            })
                         }
                         '*RuleIncludeCollection*' {
-                            $include += [PSCustomObject]@{
+                            $include.Add([PSCustomObject]@{
                                 IncludeCollectionName = $r.RuleName
                                 IncludeCollectionID   = $r.IncludeCollectionID
-                            }
+                            })
                         }
                         '*RuleExcludeCollection*' {
-                            $exclude += [PSCustomObject]@{
+                            $exclude.Add([PSCustomObject]@{
                                 ExcludeCollectionName = $r.RuleName
                                 ExcludeCollectionID   = $r.ExcludeCollectionID
-                            }
+                            })
                         }
                     }
                 }
 
-                $rulesIndex[$c.CollectionID] = @{
-                    Direct  = $direct
-                    Query   = $query
-                    Include = $include
-                    Exclude = $exclude
+                $rulesIndex[[string]$c.CollectionID] = @{
+                    Direct  = $direct.ToArray()
+                    Query   = $query.ToArray()
+                    Include = $include.ToArray()
+                    Exclude = $exclude.ToArray()
                 }
             }
 
@@ -873,6 +1064,7 @@ function Invoke-Refresh {
         }
         catch {
             $State.ErrorMsg = $_.Exception.Message
+            try { Write-LogErrorRecord -ErrorRecord $_ -Context 'Collection inventory refresh' } catch { $null = $_ }
         }
         finally {
             $State.Done = $true
@@ -897,14 +1089,28 @@ function Invoke-Refresh {
 
             if ($script:BgState.ErrorMsg) {
                 $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
+                $btnConnect.IsEnabled = $true
                 $btnRefresh.IsEnabled = $true
-                $script:IsConnectedFromBg = $false
+                $script:IsConnected = [bool]$script:BgState.Connected
+                if ($script:IsConnected) {
+                    try {
+                        if (-not (Connect-CMSite -SiteCode $global:Prefs.SiteCode -SMSProvider $global:Prefs.SMSProvider)) {
+                            throw 'The UI session could not connect to the configured site.'
+                        }
+                    } catch {
+                        $script:IsConnected = $false
+                        Add-LogLine ('UI-thread CM connect: {0}' -f $_.Exception.Message)
+                    }
+                }
+                $btnConnect.Content = if ($script:IsConnected) { 'Test Connection' } else { 'Connect Site' }
                 Add-LogLine ('Refresh failed: {0}' -f $script:BgState.ErrorMsg)
-                Set-StatusText 'Refresh failed.'
+                Set-StatusText $(if ($script:IsConnected) { 'Connected, but the collection inventory could not be loaded.' } else { 'Refresh failed.' })
+                Update-StatusBarSummary
                 return
             }
 
-            $script:IsConnectedFromBg = $true
+            $script:IsConnected = $true
+            $btnConnect.Content = 'Test Connection'
             $r = $script:BgState.Result
             $script:RawCollections       = @($r.Collections)
             $script:CollectionRulesIndex = $r.RulesIndex
@@ -912,6 +1118,7 @@ function Invoke-Refresh {
             $script:FolderById           = @{}
             foreach ($f in $script:Folders) { $script:FolderById[[int]$f.FolderID] = $f }
             $script:LastRefreshTime      = Get-Date
+            $script:CollectionInventoryLoaded = $true
 
             $script:Collections = @($script:RawCollections | ForEach-Object {
                 $idx = $script:CollectionRulesIndex[$_.CollectionID]
@@ -947,6 +1154,7 @@ function Invoke-Refresh {
             Update-StatusBarSummary
 
             $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
+            $btnConnect.IsEnabled = $true
             $btnRefresh.IsEnabled = $true
 
             # Mirror the bg runspace's CM connection into the UI thread so per-
@@ -955,8 +1163,12 @@ function Invoke-Refresh {
             # Membership) resolve. CM cmdlets require the current location to
             # be the site PSDrive, and Set-Location is per-runspace.
             try {
-                [void](Connect-CMSite -SiteCode $global:Prefs.SiteCode -SMSProvider $global:Prefs.SMSProvider)
+                if (-not (Connect-CMSite -SiteCode $global:Prefs.SiteCode -SMSProvider $global:Prefs.SMSProvider)) {
+                    throw 'The UI session could not connect to the configured site.'
+                }
             } catch {
+                $script:IsConnected = $false
+                $btnConnect.Content = 'Connect Site'
                 Add-LogLine ('UI-thread CM connect: {0}' -f $_.Exception.Message)
             }
 
@@ -988,8 +1200,8 @@ function Invoke-LoadDirectMembers {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Posts a one-shot member fetch to the bg runspace.')]
     param([Parameter(Mandatory)][string]$CollectionID)
 
-    if (-not $script:IsConnectedFromBg) {
-        Add-LogLine 'Direct members: refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        Add-LogLine 'Direct members: connect to the site first.'
         return
     }
 
@@ -1034,6 +1246,7 @@ function Invoke-LoadDirectMembers {
     $timer.Start()
 }
 
+$btnConnect.Add_Click({ Invoke-ConnectSite })
 $btnRefresh.Add_Click({ Invoke-Refresh })
 
 # =============================================================================
@@ -1043,6 +1256,10 @@ $btnValidateWql.Add_Click({
     $wql = ([string]$txtWqlEditor.Text).Trim()
     if (-not $wql) {
         $txtWqlValidation.Text = 'Enter a WQL query first.'
+        return
+    }
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site first.'
         return
     }
     $result = Test-WqlQuery -QueryExpression $wql
@@ -1060,8 +1277,8 @@ $btnPreviewWql.Add_Click({
         $txtWqlValidation.Text = 'Enter a WQL query first.'
         return
     }
-    if (-not $script:IsConnectedFromBg) {
-        $txtWqlValidation.Text = 'Refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site first.'
         return
     }
     $txtWqlValidation.Text = 'Previewing...'
@@ -1099,6 +1316,79 @@ $btnPreviewWql.Add_Click({
     $timer.Start()
 })
 
+$btnOpenWqlCollection.Add_Click({
+    if (-not $script:IsConnected) {
+        $txtWqlValidation.Text = 'Connect to the site first.'
+        Add-LogLine 'Open Collection: connect to the site first.'
+        return
+    }
+
+    $collectionId = ([string]$txtWqlCollectionId.Text).Trim()
+    if (-not $collectionId) {
+        $txtWqlValidation.Text = 'Enter a collection ID.'
+        return
+    }
+
+    try {
+        $detail = Get-CollectionDetail -CollectionId $collectionId
+        if (-not $detail) {
+            $txtWqlValidation.Text = ('Collection {0} was not found.' -f $collectionId)
+            return
+        }
+
+        $row = $script:Collections | Where-Object { [string]$_.CollectionID -eq $collectionId } | Select-Object -First 1
+        $wasInState = [bool]$row
+        if (-not $row) {
+            $refreshType = switch ([int]$detail.RefreshType) {
+                1 { 'Manual' }
+                2 { 'Periodic' }
+                4 { 'Continuous' }
+                6 { 'Both' }
+                default { "Unknown ($($detail.RefreshType))" }
+            }
+            $row = [PSCustomObject]@{
+                TypeGlyph          = Get-CollectionTypeGlyph -Collection $detail
+                Name               = [string]$detail.Name
+                CollectionID       = [string]$detail.CollectionID
+                MemberCount        = [int]$detail.MemberCount
+                LimitingCollection = [string]$detail.LimitToCollectionName
+                RefreshType        = $refreshType
+                Comment            = [string]$detail.Comment
+                IsBuiltIn          = [bool]$detail.IsBuiltIn
+                DirectCount        = [int]$detail.DirectRuleCount
+                QueryCount         = [int]$detail.QueryRuleCount
+                FolderID           = 0
+            }
+            $script:Collections = @($script:Collections) + @($row)
+        } else {
+            $row.DirectCount = [int]$detail.DirectRuleCount
+            $row.QueryCount = [int]$detail.QueryRuleCount
+        }
+
+        $oldIndex = $script:CollectionRulesIndex[$collectionId]
+        if (-not $oldIndex) {
+            $oldIndex = @{ Direct = @(); Query = @(); Include = @(); Exclude = @() }
+        }
+        $oldIndex.Query = @($detail.QueryRules | ForEach-Object {
+            [PSCustomObject]@{ RuleName = [string]$_.RuleName; QueryExpression = [string]$_.QueryExpression }
+        })
+        $script:CollectionRulesIndex[$collectionId] = $oldIndex
+
+        $gridCollections.ItemsSource = $script:Collections
+        Update-Filter
+        if ($script:CollectionInventoryLoaded -and @($script:Collections).Count -gt 1000) {
+            $txtWqlTreeFilter.Text = $collectionId
+        }
+        if (-not $wasInState) { Add-CollectionToWqlTree -Collection $row }
+        Apply-WqlCollectionSelection -Collection $row
+        $txtWqlValidation.Text = ('Opened {0} ({1}) without scanning the site.' -f $row.Name, $row.CollectionID)
+        Add-LogLine $txtWqlValidation.Text
+    } catch {
+        $txtWqlValidation.Text = ('Open Collection failed: {0}' -f $_.Exception.Message)
+        Add-LogLine $txtWqlValidation.Text
+    }
+})
+
 $btnAddRule.Add_Click({
     $coll = $script:WqlSelectedCollection
     $name = ([string]$txtRuleName.Text).Trim()
@@ -1110,7 +1400,7 @@ $btnAddRule.Add_Click({
     try {
         Add-QueryRule -CollectionId $coll.CollectionID -RuleName $name -QueryExpression $wql
         Add-LogLine ('Added rule "{0}" to collection {1}.' -f $name, $coll.Name)
-        Invoke-Refresh
+        [void](Update-WqlCollectionRuleState -Collection $coll)
     } catch {
         $txtWqlValidation.Text = ('Add rule failed: {0}' -f $_.Exception.Message)
         Add-LogLine $txtWqlValidation.Text
@@ -1130,7 +1420,7 @@ $btnUpdateRule.Add_Click({
     try {
         Update-QueryRule -CollectionId $coll.CollectionID -OldRuleName $oldName -NewRuleName $name -NewQueryExpression $wql
         Add-LogLine ('Updated rule "{0}" -> "{1}" on collection {2}.' -f $oldName, $name, $coll.Name)
-        Invoke-Refresh
+        [void](Update-WqlCollectionRuleState -Collection $coll)
     } catch {
         $txtWqlValidation.Text = ('Update rule failed: {0}' -f $_.Exception.Message)
         Add-LogLine $txtWqlValidation.Text
@@ -1150,7 +1440,7 @@ $btnRemoveRule.Add_Click({
     try {
         Remove-QueryRule -CollectionId $coll.CollectionID -RuleName $name
         Add-LogLine ('Removed rule "{0}" from collection {1}.' -f $name, $coll.Name)
-        Invoke-Refresh
+        [void](Update-WqlCollectionRuleState -Collection $coll)
     } catch {
         $txtWqlValidation.Text = ('Remove rule failed: {0}' -f $_.Exception.Message)
         Add-LogLine $txtWqlValidation.Text
@@ -1173,7 +1463,9 @@ $btnCopyToWqlEditor.Add_Click({
 })
 
 $btnApplyTemplate.Add_Click({
-    if (Show-ApplyTemplateDialog) { Invoke-Refresh }
+    if (Show-ApplyTemplateDialog) {
+        if ($script:ApplyTarget) { [void](Update-WqlCollectionRuleState -Collection $script:ApplyTarget) }
+    }
 })
 
 # =============================================================================
@@ -1183,8 +1475,8 @@ function Show-NewCollectionDialog {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Modal dialog show / dispose; reads as a single action.')]
     param()
 
-    if (-not $script:IsConnectedFromBg) {
-        Add-LogLine 'New Collection: refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        Add-LogLine 'New Collection: connect to the site first.'
         return $false
     }
 
@@ -1284,11 +1576,23 @@ function Show-NewCollectionDialog {
     $btnOk          = $dlg.FindName('btnOk')
     $btnCancel      = $dlg.FindName('btnCancel')
 
-    $script:NewLimiting = $script:Collections | Where-Object { $_.Name -eq 'All Systems' } | Select-Object -First 1
+    $script:NewLimiting = [PSCustomObject]@{ Name = 'All Systems'; CollectionID = 'SMS00001' }
+    $loadedDefaultLimit = $script:Collections | Where-Object { $_.Name -eq 'All Systems' } | Select-Object -First 1
+    if ($loadedDefaultLimit) { $script:NewLimiting = $loadedDefaultLimit }
+    $btnPickLimiting.IsEnabled = [bool]($script:CollectionInventoryLoaded -or (@($script:Collections).Count -gt 0))
+    if ($script:CollectionInventoryLoaded) {
+        $btnPickLimiting.ToolTip = 'Browse the loaded collection inventory to select a limiting collection.'
+    } else {
+        $btnPickLimiting.ToolTip = 'Browse previously opened collections. Refresh the full inventory for every collection. All Systems is selected by default.'
+    }
     if ($script:NewLimiting) {
         $txtLimiting.Text = ('{0}  ({1})' -f $script:NewLimiting.Name, $script:NewLimiting.CollectionID)
     }
     $btnPickLimiting.Add_Click({
+        if (-not $script:CollectionInventoryLoaded -and @($script:Collections).Count -eq 0) {
+            Add-LogLine 'Browse limiting collection: open a collection by ID or refresh the full inventory first. All Systems remains the default.'
+            return
+        }
         $picked = Show-CollectionPickerDialog -Owner $window -Collections $script:Collections -Folders $script:Folders -Title 'Pick Limiting Collection'
         if ($picked) {
             $script:NewLimiting = $picked
@@ -1297,6 +1601,7 @@ function Show-NewCollectionDialog {
     })
 
     $script:NewCollResult = $false
+    $script:NewCollCreated = $null
     $btnOk.Add_Click({
         $name = ([string]$txtName.Text).Trim()
         $lim  = $script:NewLimiting
@@ -1312,8 +1617,15 @@ function Show-NewCollectionDialog {
                 RefreshType            = $rt
             }
             if ($txtComment.Text) { $params['Comment'] = ([string]$txtComment.Text) }
-            New-ManagedCollection @params | Out-Null
+            $created = New-ManagedCollection @params
             Add-LogLine ('Created collection "{0}" (limiting: {1}, refresh: {2}).' -f $name, $lim.Name, $rt)
+            $script:NewCollCreated = [PSCustomObject]@{
+                Result               = $created
+                Name                 = $name
+                LimitingCollection   = [string]$lim.Name
+                Comment              = [string]$txtComment.Text
+                RefreshType          = $rt
+            }
             $script:NewCollResult = $true
             $dlg.DialogResult = $true
             $dlg.Close()
@@ -1425,8 +1737,8 @@ function Show-EditMembershipDialog {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Modal dialog show / dispose; reads as a single action.')]
     param([Parameter(Mandatory)]$Collection)
 
-    if (-not $script:IsConnectedFromBg) {
-        Add-LogLine 'Edit Membership: refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        Add-LogLine 'Edit Membership: connect to the site first.'
         return $false
     }
 
@@ -1566,8 +1878,8 @@ function Show-ApplyTemplateDialog {
         Add-LogLine 'Apply Template: select a template first.'
         return $false
     }
-    if (-not $script:IsConnectedFromBg) {
-        Add-LogLine 'Apply Template: refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        Add-LogLine 'Apply Template: connect to the site first.'
         return $false
     }
 
@@ -1710,11 +2022,96 @@ function Show-ApplyTemplateDialog {
     return $script:ApplyTplResult
 }
 
+function Update-WqlCollectionRuleState {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Refreshes the local view of one collection after a rule change.')]
+    param([Parameter(Mandatory)]$Collection)
+
+    $collectionId = [string]$Collection.CollectionID
+    try {
+        $rules = @(Get-CollectionQueryRules -CollectionId $collectionId)
+        $index = $script:CollectionRulesIndex[$collectionId]
+        if (-not $index) { $index = @{ Direct = @(); Query = @(); Include = @(); Exclude = @() } }
+        $index.Query = $rules
+        $script:CollectionRulesIndex[$collectionId] = $index
+
+        $row = $script:Collections | Where-Object { [string]$_.CollectionID -eq $collectionId } | Select-Object -First 1
+        if ($row) { $row.QueryCount = $rules.Count }
+        if ($script:WqlSelectedCollection -and [string]$script:WqlSelectedCollection.CollectionID -eq $collectionId) {
+            if ($row) { $script:WqlSelectedCollection = $row }
+            $names = @($rules | ForEach-Object { [string]$_.RuleName })
+            $lstWqlRules.Tag = $names
+            $lstWqlRules.ItemsSource = $names
+        }
+        if ($gridCollections.SelectedItem -and [string]$gridCollections.SelectedItem.CollectionID -eq $collectionId) {
+            $gridQueryRules.ItemsSource = $rules
+        }
+        $gridCollections.Items.Refresh()
+        Update-Filter
+        return $true
+    } catch {
+        Add-LogLine ('Could not reload query rules for {0}: {1}' -f $collectionId, $_.Exception.Message)
+        return $false
+    }
+}
+
+function Add-NewCollectionToState {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Adds the collection just created to the local view without scanning the site.')]
+    param([Parameter(Mandatory)]$CreatedInfo)
+
+    $created = $CreatedInfo.Result
+    $collectionId = [string]$created.CollectionID
+    if (-not $collectionId) {
+        Add-LogLine 'The collection was created, but the provider returned no Collection ID. Refresh the inventory to locate it.'
+        return
+    }
+
+    $row = $script:Collections | Where-Object { [string]$_.CollectionID -eq $collectionId } | Select-Object -First 1
+    if (-not $row) {
+        $row = [PSCustomObject]@{
+            TypeGlyph          = ''
+            Name               = [string]$CreatedInfo.Name
+            CollectionID       = $collectionId
+            MemberCount        = [int]$created.MemberCount
+            LimitingCollection = [string]$CreatedInfo.LimitingCollection
+            RefreshType        = [string]$CreatedInfo.RefreshType
+            Comment            = [string]$CreatedInfo.Comment
+            IsBuiltIn          = $false
+            DirectCount        = 0
+            QueryCount         = 0
+            FolderID           = 0
+        }
+        $script:Collections = @($script:Collections) + @($row)
+    }
+    if ($script:CollectionInventoryLoaded) {
+        $raw = [PSCustomObject]@{
+            CollectionID          = $collectionId
+            Name                  = [string]$CreatedInfo.Name
+            MemberCount           = [int]$created.MemberCount
+            LimitToCollectionName = [string]$CreatedInfo.LimitingCollection
+            LimitToCollectionID   = [string]$created.LimitToCollectionID
+            Comment               = [string]$CreatedInfo.Comment
+            RefreshType           = [string]$CreatedInfo.RefreshType
+            CollectionRules       = @()
+            IsBuiltIn             = $false
+            FolderID              = 0
+        }
+        $script:RawCollections = @($script:RawCollections) + @($raw)
+    }
+    $script:CollectionRulesIndex[$collectionId] = @{ Direct = @(); Query = @(); Include = @(); Exclude = @() }
+    $gridCollections.ItemsSource = $script:Collections
+    Update-Filter
+    Add-CollectionToWqlTree -Collection $row
+    Apply-WqlCollectionSelection -Collection $row
+    $txtWqlCollectionId.Text = $collectionId
+    Add-LogLine ('Collection {0} is ready for query rule work. The site inventory was not scanned.' -f $collectionId)
+    Update-StatusBarSummary
+}
+
 # =============================================================================
 # Wired action button handlers.
 # =============================================================================
 $btnNewCollection.Add_Click({
-    if (Show-NewCollectionDialog) { Invoke-Refresh }
+    if (Show-NewCollectionDialog) { Add-NewCollectionToState -CreatedInfo $script:NewCollCreated }
 })
 $btnCopyCollection.Add_Click({
     $row = $gridCollections.SelectedItem
@@ -1737,8 +2134,8 @@ $btnEvaluateColl.Add_Click({
         Add-LogLine 'Evaluate: pick a collection first.'
         return
     }
-    if (-not $script:IsConnectedFromBg) {
-        Add-LogLine 'Evaluate: refresh first to establish a CM connection.'
+    if (-not $script:IsConnected) {
+        Add-LogLine 'Evaluate: connect to the site first.'
         return
     }
     try {
@@ -1984,7 +2381,20 @@ function Show-OptionsDialog {
             Close-SuiteBgRunspace -Runspace $script:BgRunspace
             $script:BgRunspace = $null
             $script:BgState           = $null
-            $script:IsConnectedFromBg = $false
+            $script:IsConnected = $false
+            $btnConnect.Content       = 'Connect Site'
+            $btnConnect.IsEnabled     = $true
+            $script:CollectionInventoryLoaded = $false
+            $script:Collections       = @()
+            $script:RawCollections    = @()
+            $script:CollectionRulesIndex = @{}
+            $script:Folders           = @()
+            $script:FolderById        = @{}
+            $script:LastRefreshTime   = $null
+            $script:WqlSelectedCollection = $null
+            $gridCollections.ItemsSource = @()
+            Apply-WqlCollectionSelection -Collection $null
+            Update-WqlTreeFromState
             $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
             $btnRefresh.IsEnabled       = $true
         }
@@ -2031,7 +2441,7 @@ $window.Add_Loaded({
 
     Update-ActionBarVisibility
     Update-StatusBarSummary
-    Add-LogLine 'Collection Manager ready. Configure Site / Provider in Options, then click Refresh.'
+    Add-LogLine 'Collection Manager ready. Connect to the site for query work, or refresh to load all collections.'
 
     # Auto-load templates so the Templates view is populated on first switch
     # without requiring a ConfigMgr connection.

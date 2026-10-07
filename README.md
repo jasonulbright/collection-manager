@@ -27,21 +27,21 @@ Ships with a template library: 225 ready-made operational queries and 20 paramet
    powershell -ExecutionPolicy Bypass -File start-collectionmanager.ps1
    ```
 3. Click the **Options** button on the sidebar and set your Site Code and SMS Provider.
-4. Click **Refresh** to load every device collection.
+4. Click **Connect Site** to verify the connection without loading the collection inventory. Click **Refresh** when you want the full inventory.
 
 ## Layout
 
 The shell uses a sidebar layout with three views and an Options modal:
 
 - **Collections** -- master-detail grid of every device collection: Name, ID, Member Count, Limiting Collection, Refresh Type, Comment. Detail panel tabs: Properties, Direct Members, Query Rules, Include Rules, Exclude Rules. Filter by membership shape (Built-in / Custom / Empty / Has direct members / Has query rules) or free text.
-- **WQL Editor** -- pick a collection, pick a rule, edit the WQL in the monospace editor, click **Validate Query** to syntax-check via `Invoke-CMWmiQuery`, click **Preview Results** to see how many devices match. Add, Update, or Remove rules with single clicks.
+- **WQL Editor** -- open one collection by ID or use the tree after a full refresh. Pick a rule, edit the WQL in the monospace editor, click **Validate Query** to syntax-check via `Invoke-CMWmiQuery`, click **Preview Results** to see how many devices match. Add, Update, or Remove rules with single clicks.
 - **Templates** -- two tabs (Operational, Parameterized). Pick a template; for parameterized ones, fill in the parameters and watch the expanded WQL update live. Then **Copy to WQL Editor** for hand-tuning, or **Apply to Collection** to push the rule onto a target collection.
 
 ## Workflows
 
 ### Create or copy a collection
 
-1. **Collections** view -> **New Collection**. Pick name, limiting collection, comment, refresh type. Click Create.
+1. Connect to the site, then choose **Collections** -> **New Collection**. All Systems is the default limiting collection; use Browse after opening a collection by ID or loading the full inventory to choose another. Click Create.
 2. To clone an existing one: select the source row, click **Copy...**, name the clone, click Copy.
 
 ### Edit direct membership
@@ -51,8 +51,8 @@ The shell uses a sidebar layout with three views and an Options modal:
 
 ### Author a new WQL rule
 
-1. Switch to **WQL Editor** view.
-2. Pick a target collection.
+1. Connect to the site and switch to **WQL Editor** view.
+2. Enter a collection ID and click **Open by ID**, or pick a target from the tree after a full refresh.
 3. Type or paste the WQL. Click **Validate Query** to syntax-check.
 4. Click **Preview Results** to count matches.
 5. Type a rule name and click **Add Rule**.

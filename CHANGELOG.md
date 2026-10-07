@@ -3,6 +3,19 @@
 All notable changes to Collection Manager are documented in this
 file.
 
+## [2026.10.07.0010] - 2026-10-07
+
+### Changed
+
+- Add a separate Connect Site / Test Connection action so query and collection work does not require a full inventory refresh.
+- Open one collection by ID in the WQL Editor and refresh its query rules without scanning the site.
+- Keep new collection and query rule changes local to the affected collection instead of automatically refreshing the full inventory.
+- Build the WQL collection tree only when that view is visible and use linear-time grouping for large sites.
+
+### Fixed
+
+- Avoid repeated array copies while parsing direct, query, include, and exclude rules during large inventory scans.
+
 ## [2026.09.21.0009] - 2026-09-21
 
 ### Fixed
