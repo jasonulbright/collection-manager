@@ -152,6 +152,18 @@ function Get-CollectionDetail {
     if (-not $c) { return $null }
 
     $queryRules = @(Get-CMDeviceCollectionQueryMembershipRule -CollectionId $CollectionId -ErrorAction SilentlyContinue)
+    $directRuleCount = 0
+    $collectionRules = @()
+    try { $collectionRules = @($c.CollectionRules) } catch { $null = $_ }
+    foreach ($rule in $collectionRules) {
+        if ($null -eq $rule) { continue }
+        $typeName = $null
+        try { $typeName = [string]$rule.SmsProviderObjectPath } catch { $typeName = $null }
+        if (-not $typeName) {
+            try { $typeName = $rule.GetType().Name } catch { continue }
+        }
+        if ($typeName -like '*RuleDirect*') { $directRuleCount++ }
+    }
 
     return [PSCustomObject]@{
         CollectionID          = $c.CollectionID
@@ -162,6 +174,7 @@ function Get-CollectionDetail {
         RefreshType           = [int]$c.RefreshType
         QueryRuleCount        = $queryRules.Count
         QueryRules            = $queryRules
+        DirectRuleCount       = $directRuleCount
         IsBuiltIn             = $c.CollectionID -like 'SMS*'
     }
 }
