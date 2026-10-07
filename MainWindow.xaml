@@ -421,31 +421,101 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT: full-height collection tree (folder hierarchy) -->
-                    <DockPanel Grid.Column="0" Margin="0,0,0,0">
-                        <Grid DockPanel.Dock="Top" Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="txtWqlCollectionId" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
-                                     Controls:TextBoxHelper.Watermark="Collection ID (open one collection)"/>
-                            <Button x:Name="btnOpenWqlCollection" Grid.Column="1" Content="Open by ID"
-                                    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
-                                    ToolTip="Load one collection and its query rules without scanning the site"/>
-                        </Grid>
-                        <TextBox x:Name="txtWqlTreeFilter" DockPanel.Dock="Top" FontSize="12" Padding="6,4,6,4" Margin="0,8,0,8"
-                                 Controls:TextBoxHelper.Watermark="Filter collections by name or ID..."/>
-                        <Border BorderThickness="1"
-                                BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
-                                Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
-                            <TreeView x:Name="treeWqlCollections" FontSize="12" BorderThickness="0"
-                                      Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
-                                      Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
-                                      VirtualizingStackPanel.IsVirtualizing="True"
-                                      VirtualizingStackPanel.VirtualizationMode="Recycling"/>
-                        </Border>
-                    </DockPanel>
+                    <!-- LEFT: collections and reusable site queries -->
+                    <TabControl x:Name="tabWqlSource" Grid.Column="0" Margin="0,0,0,0">
+                        <TabItem Header="Collections">
+                            <DockPanel Margin="0,0,0,0">
+                                <Grid DockPanel.Dock="Top" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtWqlCollectionId" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
+                                             Controls:TextBoxHelper.Watermark="Collection ID (open one collection)"/>
+                                    <Button x:Name="btnOpenWqlCollection" Grid.Column="1" Content="Open by ID"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
+                                            ToolTip="Load one collection and its query rules without scanning the site"/>
+                                </Grid>
+                                <TextBox x:Name="txtWqlTreeFilter" DockPanel.Dock="Top" FontSize="12" Padding="6,4,6,4" Margin="0,8,0,8"
+                                         Controls:TextBoxHelper.Watermark="Filter collections by name or ID..."/>
+                                <Border BorderThickness="1"
+                                        BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
+                                        Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
+                                    <TreeView x:Name="treeWqlCollections" FontSize="12" BorderThickness="0"
+                                              Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
+                                              Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                                              VirtualizingStackPanel.IsVirtualizing="True"
+                                              VirtualizingStackPanel.VirtualizationMode="Recycling"/>
+                                </Border>
+                            </DockPanel>
+                        </TabItem>
+                        <TabItem x:Name="tabSiteQueries" Header="Site Queries">
+                            <Grid Margin="4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Margin="0,4,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtSavedQueryFilter" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
+                                             Controls:TextBoxHelper.Watermark="Filter saved queries..."/>
+                                    <Button x:Name="btnRefreshSavedQueries" Grid.Column="1" Content="Refresh"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="76"
+                                            ToolTip="Reload saved queries from the site"/>
+                                </Grid>
+                                <DataGrid x:Name="gridSavedQueries" Grid.Row="1" Margin="0,0,0,8"
+                                          Style="{StaticResource ViewDataGrid}"
+                                          ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
+                                          CellStyle="{StaticResource GridCellStyle}"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          SelectionMode="Single" SelectionUnit="FullRow"
+                                          CanUserAddRows="False" CanUserDeleteRows="False">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Saved Query" Width="*" Binding="{Binding Name}"/>
+                                        <DataGridTextColumn Header="ID" Width="86" Binding="{Binding QueryID}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBox x:Name="txtSavedQueryName" Grid.Row="2" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,6"
+                                         Controls:TextBoxHelper.Watermark="Saved query name"/>
+                                <TextBox x:Name="txtSavedQueryComment" Grid.Row="3" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,6"
+                                         MinHeight="42" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                         Controls:TextBoxHelper.Watermark="Comments (optional)"/>
+                                <Grid Grid.Row="4" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtSavedQueryTargetClass" Grid.Column="0" FontSize="11" Padding="6,4,6,4" Margin="0,0,4,0"
+                                             ToolTip="Target class shown by Configuration Manager; optional"
+                                             Controls:TextBoxHelper.Watermark="Target class (optional)"/>
+                                    <TextBox x:Name="txtSavedQueryLimitId" Grid.Column="1" FontSize="11" Padding="6,4,6,4" Margin="4,0,0,0"
+                                             ToolTip="Collection ID or &lt;Prompt&gt;; leave blank for no limit"
+                                             Controls:TextBoxHelper.Watermark="Limit ID or &lt;Prompt&gt;"/>
+                                </Grid>
+                                <WrapPanel Grid.Row="5" Margin="0,0,0,4">
+                                    <Button x:Name="btnLoadSavedQuery" Content="Load to Editor"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="112" Margin="0,0,4,4"
+                                            ToolTip="Load the selected site's WQL query into the editor"/>
+                                    <Button x:Name="btnSaveSiteQuery" Content="Save as New"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="96" Margin="0,0,4,4"
+                                            ToolTip="Save the editor contents as a reusable site query"/>
+                                    <Button x:Name="btnUpdateSiteQuery" Content="Update Saved"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="102" Margin="0,0,4,4"
+                                            ToolTip="Save changes to the selected site query"/>
+                                    <Button x:Name="btnDeleteSiteQuery" Content="Delete"
+                                            Style="{StaticResource SquareInlineButtonStyle}" MinWidth="76" Margin="0,0,4,4"
+                                            ToolTip="Delete the selected saved query from the site"/>
+                                </WrapPanel>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
 
                     <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
                                   Background="{DynamicResource MahApps.Brushes.Gray8}"

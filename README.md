@@ -35,6 +35,7 @@ The shell uses a sidebar layout with three views and an Options modal:
 
 - **Collections** -- master-detail grid of every device collection: Name, ID, Member Count, Limiting Collection, Refresh Type, Comment. Detail panel tabs: Properties, Direct Members, Query Rules, Include Rules, Exclude Rules. Filter by membership shape (Built-in / Custom / Empty / Has direct members / Has query rules) or free text.
 - **WQL Editor** -- open one collection by ID or use the tree after a full refresh. Pick a rule, edit the WQL in the monospace editor, click **Validate Query** to syntax-check via `Invoke-CMWmiQuery`, click **Preview Results** to see how many devices match. Add, Update, or Remove rules with single clicks.
+- The WQL Editor's **Site Queries** tab lists queries already saved in the Configuration Manager site. Load one into the editor, save a new reusable query, update the selected saved query, or delete it from the site.
 - **Templates** -- two tabs (Operational, Parameterized). Pick a template; for parameterized ones, fill in the parameters and watch the expanded WQL update live. Then **Copy to WQL Editor** for hand-tuning, or **Apply to Collection** to push the rule onto a target collection.
 
 ## Workflows
@@ -56,6 +57,14 @@ The shell uses a sidebar layout with three views and an Options modal:
 3. Type or paste the WQL. Click **Validate Query** to syntax-check.
 4. Click **Preview Results** to count matches.
 5. Type a rule name and click **Add Rule**.
+
+### Save and reuse a site query
+
+1. Click **Connect Site**; this does not load the collection inventory.
+2. In **WQL Editor**, open the **Site Queries** tab and click **Refresh**.
+3. Select a saved query and click **Load to Editor**. Its WQL and site metadata fill the editor fields.
+4. To use it in a collection, select the target collection on the **Collections** tab, enter a rule name, and click **Add Rule**.
+5. To save a new reusable site query, enter its name and click **Save as New**. To change a saved query, load it, edit its WQL or metadata, and click **Update Saved**. **Delete** removes the selected saved query from the site after confirmation.
 
 ### Apply a ready-made template
 

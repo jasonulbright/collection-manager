@@ -249,3 +249,107 @@ Describe 'Export-CollectionHtml' {
         $content | Should -Match 'Collection A'
     }
 }
+
+# ============================================================================
+# Saved site queries
+# ============================================================================
+
+Describe 'Saved site queries' {
+    BeforeAll {
+        InModuleScope CollectionManagerCommon {
+            function Get-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
+                throw 'Get-CMQuery must be mocked by the test.'
+            }
+            function New-CMQuery {
+                [CmdletBinding()]
+                param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
+                throw 'New-CMQuery must be mocked by the test.'
+            }
+            function Set-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
+                throw 'Set-CMQuery must be mocked by the test.'
+            }
+            function Remove-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [switch]$Force)
+                throw 'Remove-CMQuery must be mocked by the test.'
+            }
+        }
+    }
+
+    BeforeEach {
+        Mock Get-CMQuery -ModuleName CollectionManagerCommon {
+            @([PSCustomObject]@{
+                QueryID = 'ABC00001'
+                Name = 'Windows Workstations'
+                Expression = 'select * from SMS_R_System'
+                Comments = 'Reusable device query'
+                TargetClassName = 'SMS_R_System'
+                LimitToCollectionID = '<Prompt>'
+            })
+        }
+        Mock New-CMQuery -ModuleName CollectionManagerCommon {
+            [PSCustomObject]@{
+                QueryID = 'ABC00002'
+                Name = $Name
+                Expression = $Expression
+                Comments = $Comment
+                TargetClassName = $TargetClassName
+                LimitToCollectionID = $LimitToCollectionId
+            }
+        }
+        Mock Set-CMQuery -ModuleName CollectionManagerCommon {
+            [PSCustomObject]@{
+                QueryID = $Id
+                Name = $NewName
+                Expression = $Expression
+                Comments = $Comment
+                TargetClassName = $TargetClassName
+                LimitToCollectionID = $LimitToCollectionId
+            }
+        }
+        Mock Remove-CMQuery -ModuleName CollectionManagerCommon {}
+    }
+
+    It 'lists site queries with their reusable WQL and metadata' {
+        $queries = @(Get-SiteSavedQueries)
+        $queries.Count | Should -Be 1
+        $queries[0].QueryID | Should -Be 'ABC00001'
+        $queries[0].Expression | Should -Be 'select * from SMS_R_System'
+        $queries[0].Comment | Should -Be 'Reusable device query'
+        $queries[0].LimitToCollectionID | Should -Be '<Prompt>'
+    }
+
+    It 'creates a site query with its metadata' {
+        $query = New-SiteSavedQuery -Name 'Windows Workstations' -Expression 'select * from SMS_R_System' `
+            -Comment 'Reusable device query' -TargetClassName 'SMS_R_System' -LimitToCollectionId '<Prompt>'
+        $query.QueryID | Should -Be 'ABC00002'
+        $query.Name | Should -Be 'Windows Workstations'
+        Should -Invoke New-CMQuery -ModuleName CollectionManagerCommon -Times 1 -ParameterFilter {
+            $Name -eq 'Windows Workstations' -and $Expression -eq 'select * from SMS_R_System' -and
+            $Comment -eq 'Reusable device query' -and $LimitToCollectionId -eq '<Prompt>'
+        }
+    }
+
+    It 'updates the selected site query including metadata fields' {
+        $query = Set-SiteSavedQuery -QueryId 'ABC00001' -Name 'Windows Workstations v2' `
+            -Expression 'select * from SMS_R_System where Client = 1' -Comment '' `
+            -TargetClassName 'SMS_R_System' -LimitToCollectionId ''
+        $query.Name | Should -Be 'Windows Workstations v2'
+        $query.LimitToCollectionID | Should -Be ''
+        Should -Invoke Set-CMQuery -ModuleName CollectionManagerCommon -Times 1 -ParameterFilter {
+            $Id -eq 'ABC00001' -and $NewName -eq 'Windows Workstations v2' -and
+            $Expression -eq 'select * from SMS_R_System where Client = 1' -and $LimitToCollectionId -eq ''
+        }
+    }
+
+    It 'deletes a site query by ID' {
+        Remove-SiteSavedQuery -QueryId 'ABC00001' | Should -BeTrue
+        Should -Invoke Remove-CMQuery -ModuleName CollectionManagerCommon -Times 1 -ParameterFilter {
+            $Id -eq 'ABC00001' -and $Force
+        }
+    }
+}
