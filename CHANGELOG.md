@@ -3,6 +3,12 @@
 All notable changes to Collection Manager are documented in this
 file.
 
+## [2026.10.07.0012] - 2026-10-07
+
+### Changed
+
+- Sync the shared SuiteCommon module to 2026.10.07.0049.
+
 ## [2026.10.07.0011] - 2026-10-07
 
 ### Added
