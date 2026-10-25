@@ -18,7 +18,7 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 2026.10.12.0015
+    Version    : 2026.10.25.0016
     Updated    : 2026-10-07
 #>
 
