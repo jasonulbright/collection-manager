@@ -754,7 +754,7 @@ function Update-SiteSavedQueryList {
     $script:SelectedSiteSavedQueryId = ''
 }
 
-function Update-SiteSavedQueries {
+function Sync-SiteSavedQueryCache {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Refreshes the saved-query list from the connected site.')]
     param([string]$SelectQueryId = $script:SelectedSiteSavedQueryId)
 
@@ -825,7 +825,7 @@ function Save-NewSiteSavedQuery {
             -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
         $script:LoadedSiteSavedQueryId = [string]$query.QueryID
         $script:SelectedSiteSavedQueryId = [string]$query.QueryID
-        if (Update-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+        if (Sync-SiteSavedQueryCache -SelectQueryId ([string]$query.QueryID)) {
             $txtWqlValidation.Text = ('Saved "{0}" to the site. Load it later or use Add Rule for a collection.' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -869,7 +869,7 @@ function Update-SelectedSiteSavedQuery {
             -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
         $script:LoadedSiteSavedQueryId = [string]$query.QueryID
         $script:SelectedSiteSavedQueryId = [string]$query.QueryID
-        if (Update-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+        if (Sync-SiteSavedQueryCache -SelectQueryId ([string]$query.QueryID)) {
             $txtWqlValidation.Text = ('Updated saved site query "{0}".' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -906,7 +906,7 @@ function Remove-SelectedSiteSavedQuery {
         $txtSavedQueryComment.Clear()
         $txtSavedQueryTargetClass.Clear()
         $txtSavedQueryLimitId.Clear()
-        if (Update-SiteSavedQueries -SelectQueryId '') {
+        if (Sync-SiteSavedQueryCache -SelectQueryId '') {
             $txtWqlValidation.Text = ('Deleted saved site query "{0}".' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -935,14 +935,14 @@ $gridSavedQueries.Add_SelectionChanged({
     $txtSavedQueryTargetClass.Text = [string]$query.TargetClassName
     $txtSavedQueryLimitId.Text = [string]$query.LimitToCollectionID
 })
-$btnRefreshSavedQueries.Add_Click({ [void](Update-SiteSavedQueries -SelectQueryId '') })
+$btnRefreshSavedQueries.Add_Click({ [void](Sync-SiteSavedQueryCache -SelectQueryId '') })
 $btnLoadSavedQuery.Add_Click({ [void](Show-SelectedSiteSavedQuery) })
 $btnSaveSiteQuery.Add_Click({ [void](Save-NewSiteSavedQuery) })
 $btnUpdateSiteQuery.Add_Click({ [void](Update-SelectedSiteSavedQuery) })
 $btnDeleteSiteQuery.Add_Click({ [void](Remove-SelectedSiteSavedQuery) })
 $tabSiteQueries.Add_Selected({
     if ($script:IsConnected -and -not $script:SiteSavedQueriesLoaded) {
-        [void](Update-SiteSavedQueries -SelectQueryId '')
+        [void](Sync-SiteSavedQueryCache -SelectQueryId '')
     }
 })
 
