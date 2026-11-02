@@ -754,7 +754,7 @@ function Update-SiteSavedQueryList {
     $script:SelectedSiteSavedQueryId = ''
 }
 
-function Refresh-SiteSavedQueries {
+function Sync-SiteSavedQueryCache {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Refreshes the saved-query list from the connected site.')]
     param([string]$SelectQueryId = $script:SelectedSiteSavedQueryId)
 
@@ -777,7 +777,7 @@ function Refresh-SiteSavedQueries {
     }
 }
 
-function Load-SelectedSiteSavedQuery {
+function Show-SelectedSiteSavedQuery {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Loads one saved query into the in-window WQL editor.')]
     param()
 
@@ -825,7 +825,7 @@ function Save-NewSiteSavedQuery {
             -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
         $script:LoadedSiteSavedQueryId = [string]$query.QueryID
         $script:SelectedSiteSavedQueryId = [string]$query.QueryID
-        if (Refresh-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+        if (Sync-SiteSavedQueryCache -SelectQueryId ([string]$query.QueryID)) {
             $txtWqlValidation.Text = ('Saved "{0}" to the site. Load it later or use Add Rule for a collection.' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -869,7 +869,7 @@ function Update-SelectedSiteSavedQuery {
             -LimitToCollectionId ([string]$txtSavedQueryLimitId.Text).Trim()
         $script:LoadedSiteSavedQueryId = [string]$query.QueryID
         $script:SelectedSiteSavedQueryId = [string]$query.QueryID
-        if (Refresh-SiteSavedQueries -SelectQueryId ([string]$query.QueryID)) {
+        if (Sync-SiteSavedQueryCache -SelectQueryId ([string]$query.QueryID)) {
             $txtWqlValidation.Text = ('Updated saved site query "{0}".' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -881,7 +881,7 @@ function Update-SelectedSiteSavedQuery {
     }
 }
 
-function Delete-SelectedSiteSavedQuery {
+function Remove-SelectedSiteSavedQuery {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Deletes a selected saved WQL query after an explicit confirmation.')]
     param()
 
@@ -906,7 +906,7 @@ function Delete-SelectedSiteSavedQuery {
         $txtSavedQueryComment.Clear()
         $txtSavedQueryTargetClass.Clear()
         $txtSavedQueryLimitId.Clear()
-        if (Refresh-SiteSavedQueries -SelectQueryId '') {
+        if (Sync-SiteSavedQueryCache -SelectQueryId '') {
             $txtWqlValidation.Text = ('Deleted saved site query "{0}".' -f $query.Name)
             Add-LogLine $txtWqlValidation.Text
         }
@@ -935,14 +935,14 @@ $gridSavedQueries.Add_SelectionChanged({
     $txtSavedQueryTargetClass.Text = [string]$query.TargetClassName
     $txtSavedQueryLimitId.Text = [string]$query.LimitToCollectionID
 })
-$btnRefreshSavedQueries.Add_Click({ [void](Refresh-SiteSavedQueries -SelectQueryId '') })
-$btnLoadSavedQuery.Add_Click({ [void](Load-SelectedSiteSavedQuery) })
+$btnRefreshSavedQueries.Add_Click({ [void](Sync-SiteSavedQueryCache -SelectQueryId '') })
+$btnLoadSavedQuery.Add_Click({ [void](Show-SelectedSiteSavedQuery) })
 $btnSaveSiteQuery.Add_Click({ [void](Save-NewSiteSavedQuery) })
 $btnUpdateSiteQuery.Add_Click({ [void](Update-SelectedSiteSavedQuery) })
-$btnDeleteSiteQuery.Add_Click({ [void](Delete-SelectedSiteSavedQuery) })
+$btnDeleteSiteQuery.Add_Click({ [void](Remove-SelectedSiteSavedQuery) })
 $tabSiteQueries.Add_Selected({
     if ($script:IsConnected -and -not $script:SiteSavedQueriesLoaded) {
-        [void](Refresh-SiteSavedQueries -SelectQueryId '')
+        [void](Sync-SiteSavedQueryCache -SelectQueryId '')
     }
 })
 
