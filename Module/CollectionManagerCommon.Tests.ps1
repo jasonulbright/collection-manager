@@ -256,26 +256,35 @@ Describe 'Export-CollectionHtml' {
 
 Describe 'Saved site queries' {
     BeforeAll {
-        InModuleScope CollectionManagerCommon {
-            function Get-CMQuery {
-                [CmdletBinding()]
-                param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
-                throw 'Get-CMQuery must be mocked by the test.'
-            }
-            function New-CMQuery {
-                [CmdletBinding()]
-                param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
-                throw 'New-CMQuery must be mocked by the test.'
-            }
-            function Set-CMQuery {
-                [CmdletBinding()]
-                param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
-                throw 'Set-CMQuery must be mocked by the test.'
-            }
-            function Remove-CMQuery {
-                [CmdletBinding()]
-                param([string]$Id, [switch]$Force)
-                throw 'Remove-CMQuery must be mocked by the test.'
+        function global:Get-CMQuery {
+            [CmdletBinding()]
+            param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
+            throw 'Get-CMQuery must be mocked by the test.'
+        }
+        function global:New-CMQuery {
+            [CmdletBinding()]
+            param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
+            throw 'New-CMQuery must be mocked by the test.'
+        }
+        function global:Set-CMQuery {
+            [CmdletBinding()]
+            param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
+            throw 'Set-CMQuery must be mocked by the test.'
+        }
+        function global:Remove-CMQuery {
+            [CmdletBinding()]
+            param([string]$Id, [switch]$Force)
+            throw 'Remove-CMQuery must be mocked by the test.'
+        }
+    }
+
+    AfterAll {
+        # A function:global: stub can survive as a copy in a nearer scope and shadow the real command later in the same process, so remove it through the scope chain too.
+        foreach ($name in 'Get-CMQuery', 'New-CMQuery', 'Set-CMQuery', 'Remove-CMQuery') {
+            Remove-Item -Path "function:global:$name" -ErrorAction SilentlyContinue
+            $guard = 0
+            while ($guard++ -lt 8 -and (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue)) {
+                Remove-Item -Path "function:$name" -Force -ErrorAction SilentlyContinue
             }
         }
     }
