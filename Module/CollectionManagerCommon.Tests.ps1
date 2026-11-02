@@ -256,47 +256,53 @@ Describe 'Export-CollectionHtml' {
 
 Describe 'Saved site queries' {
     BeforeAll {
-        $script:savedSiteQueryStubs = @{}
-        foreach ($name in 'Get-CMQuery', 'New-CMQuery', 'Set-CMQuery', 'Remove-CMQuery') {
-            $existing = Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue
-            if ($existing) { $script:savedSiteQueryStubs[$name] = $existing.ScriptBlock }
+        # The ConfigMgr module may not be installed. Define a stub only for a command that does not exist,
+        # so the tests never replace or remove a command that is already there.
+        $script:ownedSiteQueryStubs = @()
+        if (-not (Get-Command -Name Get-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Get-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
+                throw 'Get-CMQuery must be mocked by the test.'
+            }
+            $script:ownedSiteQueryStubs += 'Get-CMQuery'
         }
-        function global:Get-CMQuery {
-            [CmdletBinding()]
-            param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
-            throw 'Get-CMQuery must be mocked by the test.'
+        if (-not (Get-Command -Name New-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:New-CMQuery {
+                [CmdletBinding()]
+                param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
+                throw 'New-CMQuery must be mocked by the test.'
+            }
+            $script:ownedSiteQueryStubs += 'New-CMQuery'
         }
-        function global:New-CMQuery {
-            [CmdletBinding()]
-            param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
-            throw 'New-CMQuery must be mocked by the test.'
+        if (-not (Get-Command -Name Set-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Set-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
+                throw 'Set-CMQuery must be mocked by the test.'
+            }
+            $script:ownedSiteQueryStubs += 'Set-CMQuery'
         }
-        function global:Set-CMQuery {
-            [CmdletBinding()]
-            param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
-            throw 'Set-CMQuery must be mocked by the test.'
-        }
-        function global:Remove-CMQuery {
-            [CmdletBinding()]
-            param([string]$Id, [switch]$Force)
-            throw 'Remove-CMQuery must be mocked by the test.'
+        if (-not (Get-Command -Name Remove-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Remove-CMQuery {
+                [CmdletBinding()]
+                param([string]$Id, [switch]$Force)
+                throw 'Remove-CMQuery must be mocked by the test.'
+            }
+            $script:ownedSiteQueryStubs += 'Remove-CMQuery'
         }
     }
 
     AfterAll {
-        # A function:global: stub can survive as a copy in a nearer scope and shadow the real command later in the same process, so remove it through the scope chain too.
-        foreach ($name in 'Get-CMQuery', 'New-CMQuery', 'Set-CMQuery', 'Remove-CMQuery') {
-            Remove-Item -Path "function:global:$name" -ErrorAction SilentlyContinue
+        # Remove only the stubs this block created. A copy of a stub can survive in a nearer scope,
+        # so repeat the removal until the name no longer resolves to a function.
+        foreach ($name in $script:ownedSiteQueryStubs) {
             $guard = 0
             while ($guard++ -lt 8 -and (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue)) {
                 Remove-Item -Path "function:$name" -Force -ErrorAction SilentlyContinue
             }
-            if ($script:savedSiteQueryStubs.ContainsKey($name)) {
-                Set-Item -Path "function:global:$name" -Value $script:savedSiteQueryStubs[$name]
-            }
         }
     }
-
     BeforeEach {
         Mock Get-CMQuery -ModuleName CollectionManagerCommon {
             @([PSCustomObject]@{
