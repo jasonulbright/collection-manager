@@ -256,30 +256,53 @@ Describe 'Export-CollectionHtml' {
 
 Describe 'Saved site queries' {
     BeforeAll {
-        InModuleScope CollectionManagerCommon {
-            function Get-CMQuery {
+        # The ConfigMgr module may not be installed. Define a stub only for a command that does not exist,
+        # so the tests never replace or remove a command that is already there.
+        $script:ownedSiteQueryStubs = @()
+        if (-not (Get-Command -Name Get-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Get-CMQuery {
                 [CmdletBinding()]
                 param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
                 throw 'Get-CMQuery must be mocked by the test.'
             }
-            function New-CMQuery {
+            $script:ownedSiteQueryStubs += 'Get-CMQuery'
+        }
+        if (-not (Get-Command -Name New-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:New-CMQuery {
                 [CmdletBinding()]
                 param([string]$Name, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId)
                 throw 'New-CMQuery must be mocked by the test.'
             }
-            function Set-CMQuery {
+            $script:ownedSiteQueryStubs += 'New-CMQuery'
+        }
+        if (-not (Get-Command -Name Set-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Set-CMQuery {
                 [CmdletBinding()]
                 param([string]$Id, [string]$NewName, [string]$Expression, [string]$Comment, [string]$TargetClassName, [string]$LimitToCollectionId, [switch]$PassThru)
                 throw 'Set-CMQuery must be mocked by the test.'
             }
-            function Remove-CMQuery {
+            $script:ownedSiteQueryStubs += 'Set-CMQuery'
+        }
+        if (-not (Get-Command -Name Remove-CMQuery -ErrorAction SilentlyContinue)) {
+            function global:Remove-CMQuery {
                 [CmdletBinding()]
                 param([string]$Id, [switch]$Force)
                 throw 'Remove-CMQuery must be mocked by the test.'
             }
+            $script:ownedSiteQueryStubs += 'Remove-CMQuery'
         }
     }
 
+    AfterAll {
+        # Remove only the stubs this block created. A copy of a stub can survive in a nearer scope,
+        # so repeat the removal until the name no longer resolves to a function.
+        foreach ($name in $script:ownedSiteQueryStubs) {
+            $guard = 0
+            while ($guard++ -lt 8 -and (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue)) {
+                Remove-Item -Path "function:$name" -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
     BeforeEach {
         Mock Get-CMQuery -ModuleName CollectionManagerCommon {
             @([PSCustomObject]@{
