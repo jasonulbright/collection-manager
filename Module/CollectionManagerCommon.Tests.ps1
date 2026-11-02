@@ -256,6 +256,11 @@ Describe 'Export-CollectionHtml' {
 
 Describe 'Saved site queries' {
     BeforeAll {
+        $script:savedSiteQueryStubs = @{}
+        foreach ($name in 'Get-CMQuery', 'New-CMQuery', 'Set-CMQuery', 'Remove-CMQuery') {
+            $existing = Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue
+            if ($existing) { $script:savedSiteQueryStubs[$name] = $existing.ScriptBlock }
+        }
         function global:Get-CMQuery {
             [CmdletBinding()]
             param([string]$Id, [string]$Name, [switch]$DisableWildcardHandling)
@@ -285,6 +290,9 @@ Describe 'Saved site queries' {
             $guard = 0
             while ($guard++ -lt 8 -and (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue)) {
                 Remove-Item -Path "function:$name" -Force -ErrorAction SilentlyContinue
+            }
+            if ($script:savedSiteQueryStubs.ContainsKey($name)) {
+                Set-Item -Path "function:global:$name" -Value $script:savedSiteQueryStubs[$name]
             }
         }
     }
