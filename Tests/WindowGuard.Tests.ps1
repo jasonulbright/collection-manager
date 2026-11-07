@@ -76,7 +76,7 @@ Describe 'Window test files carry the guard' {
     }
 
     It '<Name> applies the guard to every top-level Describe' -ForEach $script:WindowTestFiles {
-        $describes = @(Get-Content -LiteralPath $Path | Where-Object { $_ -match '^\s*Describe' })
+        $describes = @(Get-Content -LiteralPath $Path | Where-Object { $_ -match '^\s*Describe\b' })
         $describes.Count | Should -BeGreaterThan 0
         @($describes | Where-Object { $_ -notmatch '-Skip:\(-not \$script:WindowGuard\.Allowed\)' }) | Should -BeNullOrEmpty
     }
