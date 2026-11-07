@@ -457,6 +457,8 @@ function Set-CollectionProperties {
     if ($PSBoundParameters.ContainsKey('RefreshType')) {
         if ($RefreshType -notin 1, 2, 4, 6) { throw "Invalid refresh type $RefreshType. Use 1 (Manual), 2 (Periodic), 4 (Continuous) or 6 (Both)." }
         $params['RefreshType'] = $RefreshType
+        # Periodic (2) and Both (6) need a refresh schedule, as in New-ManagedCollection.
+        if ($RefreshType -in 2, 6) { $params['RefreshSchedule'] = New-CMSchedule -RecurInterval Days -RecurCount 7 }
     }
 
     if (-not $PSCmdlet.ShouldProcess($CollectionId, 'Update collection properties')) { return }
@@ -820,11 +822,16 @@ function Expand-TemplateParameters {
         [Parameter(Mandatory)][hashtable]$ParameterValues
     )
 
-    $expanded = $QueryTemplate
-    foreach ($key in $ParameterValues.Keys) {
-        $expanded = $expanded.Replace($key, $ParameterValues[$key])
-    }
-
+    # One pass over the template: a value that contains another token is not expanded again,
+    # so a parameter value cannot pull in another parameter. The longest key wins at a position.
+    if ($ParameterValues.Count -eq 0) { return $QueryTemplate }
+    $keys = @($ParameterValues.Keys | Where-Object { $_ } | Sort-Object { $_.Length } -Descending | ForEach-Object { [regex]::Escape([string]$_) })
+    $pattern = $keys -join '|'
+    $expanded = [regex]::Replace($QueryTemplate, $pattern, {
+            param($m)
+            $v = $ParameterValues[$m.Value]
+            if ($null -eq $v) { '' } else { [string]$v }
+        })
     return $expanded
 }
 
@@ -870,10 +877,10 @@ function Export-CollectionCsv {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Table')]
     param(
-        [Parameter(Mandatory, ParameterSetName = 'Table')][System.Data.DataTable]$DataTable,
+        [Parameter(Mandatory, ParameterSetName = 'Table', Position = 0)][System.Data.DataTable]$DataTable,
         [Parameter(Mandatory, ParameterSetName = 'Objects')][AllowNull()][AllowEmptyCollection()][object[]]$Collections,
         [Parameter(ParameterSetName = 'Objects')][string[]]$Columns,
-        [Parameter(Mandatory)][string]$OutputPath
+        [Parameter(Mandatory, Position = 1)][string]$OutputPath
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Objects') { $DataTable = ConvertTo-CollectionDataTable -Objects $Collections -Columns $Columns }
@@ -905,11 +912,11 @@ function Export-CollectionHtml {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Table')]
     param(
-        [Parameter(Mandatory, ParameterSetName = 'Table')][System.Data.DataTable]$DataTable,
+        [Parameter(Mandatory, ParameterSetName = 'Table', Position = 0)][System.Data.DataTable]$DataTable,
         [Parameter(Mandatory, ParameterSetName = 'Objects')][AllowNull()][AllowEmptyCollection()][object[]]$Collections,
         [Parameter(ParameterSetName = 'Objects')][string[]]$Columns,
-        [Parameter(Mandatory)][string]$OutputPath,
-        [string]$ReportTitle = 'Collection Manager Report'
+        [Parameter(Mandatory, Position = 1)][string]$OutputPath,
+        [Parameter(Position = 2)][string]$ReportTitle = 'Collection Manager Report'
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Objects') { $DataTable = ConvertTo-CollectionDataTable -Objects $Collections -Columns $Columns }

@@ -2070,10 +2070,13 @@ function Show-EditMembershipDialog {
         $name = ([string]$txtAddDevice.Text).Trim()
         if (-not $name) { return }
         try {
-            Add-DirectMember -CollectionId $Collection.CollectionID -DeviceName $name
-            Add-LogLine ('Added "{0}" to {1}.' -f $name, $Collection.Name)
-            $txtAddDevice.Text = ''
-            & $reload
+            if (Add-DirectMember -CollectionId $Collection.CollectionID -DeviceName $name) {
+                Add-LogLine ('Added "{0}" to {1}.' -f $name, $Collection.Name)
+                $txtAddDevice.Text = ''
+                & $reload
+            } else {
+                Add-LogLine ('Add direct member: no device was added for "{0}". The name must match one device exactly. See the log for the reason.' -f $name)
+            }
         } catch {
             Add-LogLine ('Add direct member failed: {0}' -f $_.Exception.Message)
         }

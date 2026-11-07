@@ -6,7 +6,7 @@
 BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     Import-AppModule
-    $script:Stubs = New-CmStub -Name New-CMDeviceCollection, Copy-CMCollection, Remove-CMDeviceCollection, Set-CMCollection, New-CMSchedule,
+    $script:Stubs = New-CmStub -Name Get-CMDeviceCollection, New-CMDeviceCollection, Copy-CMCollection, Remove-CMDeviceCollection, Set-CMCollection, New-CMSchedule,
         Get-CMDevice, Add-CMDeviceCollectionDirectMembershipRule, Remove-CMDeviceCollectionDirectMembershipRule,
         Add-CMDeviceCollectionQueryMembershipRule, Remove-CMDeviceCollectionQueryMembershipRule, Get-CMDeviceCollectionQueryMembershipRule,
         Add-CMDeviceCollectionIncludeMembershipRule, Add-CMDeviceCollectionExcludeMembershipRule, Invoke-CMCollectionUpdate
@@ -182,6 +182,12 @@ Describe 'Set-CollectionProperties' {
     ) {
         Set-CollectionProperties -CollectionId 'MCM00001' -RefreshType $Value
         Should -Invoke Set-CMCollection -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter { $RefreshType -eq $Value }
+    }
+
+    It 'passes a refresh schedule for refresh type <Value> only when it is periodic: <Sched>' -ForEach @(@{ Value = 1; Sched = $false }, @{ Value = 2; Sched = $true }, @{ Value = 4; Sched = $false }, @{ Value = 6; Sched = $true }) {
+        Mock New-CMSchedule { 'schedule' } -ModuleName CollectionManagerCommon
+        Set-CollectionProperties -CollectionId 'MCM00001' -RefreshType $Value
+        Should -Invoke Set-CMCollection -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter { [bool]$RefreshSchedule -eq $Sched }
     }
 
     It 'rejects the refresh type <Value> before it calls the site' -ForEach @(

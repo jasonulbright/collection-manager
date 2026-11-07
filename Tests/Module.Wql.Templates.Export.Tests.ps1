@@ -142,6 +142,7 @@ Describe 'Template files' {
             $t = @(& $fn)
             ($t | Where-Object { -not $_.Name }) | Should -BeNullOrEmpty
             ($t | Where-Object { -not ($_.Query -or $_.QueryTemplate -or $_.WQL -or $_.Expression) }) | Should -BeNullOrEmpty
+            ($t | Group-Object Name | Where-Object Count -gt 1 | ForEach-Object Name) | Should -BeNullOrEmpty -Because "$fn has a name twice"
         }
     }
 }
@@ -162,8 +163,19 @@ Describe 'Expand-TemplateParameters' {
         Expand-TemplateParameters -QueryTemplate $Q -ParameterValues $V | Should -BeExactly $Expected
     }
 
-    It 'does not expand a token that a value introduces' {
-        Expand-TemplateParameters -QueryTemplate '{A}' -ParameterValues ([ordered]@{ '{A}' = '{B}'; '{B}' = 'x' }) | Should -BeIn '{B}', 'x'
+    It 'does not expand a token that a value introduces, whatever the key order' -ForEach @(
+        @{ Order = 'AB'; V = ([ordered]@{ '{A}' = '{B}'; '{B}' = 'x' }) }
+        @{ Order = 'BA'; V = ([ordered]@{ '{B}' = 'x'; '{A}' = '{B}' }) }
+    ) {
+        Expand-TemplateParameters -QueryTemplate '{A} {B}' -ParameterValues $V | Should -BeExactly '{B} x'
+    }
+
+    It 'takes the longest key at a position' {
+        Expand-TemplateParameters -QueryTemplate '{AB}{A}' -ParameterValues @{ '{A}' = '1'; '{AB}' = '2' } | Should -BeExactly '21'
+    }
+
+    It 'expands a null value to nothing' {
+        Expand-TemplateParameters -QueryTemplate 'a{A}b' -ParameterValues @{ '{A}' = $null } | Should -BeExactly 'ab'
     }
 
     It 'rejects an empty template' {
@@ -294,5 +306,18 @@ Describe 'Export from collection objects (the Export buttons)' {
 
     It 'rejects a data table together with collection objects' {
         { Export-CollectionCsv -DataTable (New-RollupTable -Column A -Row @(, @('x'))) -Collections $script:rows -OutputPath (Join-Path $TestDrive 'x.csv') } | Should -Throw
+    }
+}
+Describe 'Exporters bind positionally' {
+    It 'Export-CollectionCsv takes the table and the path by position' {
+        $path = Join-Path $TestDrive 'pos.csv'
+        Export-CollectionCsv (New-RollupTable -Column A -Row @(, @('x'))) $path
+        (Import-Csv -LiteralPath $path)[0].A | Should -Be 'x'
+    }
+
+    It 'Export-CollectionHtml takes the table, the path and the title by position' {
+        $path = Join-Path $TestDrive 'pos.html'
+        Export-CollectionHtml (New-RollupTable -Column A -Row @(, @('x'))) $path 'My title'
+        (Get-Content -LiteralPath $path -Raw) | Should -Match '<h1>My title</h1>'
     }
 }

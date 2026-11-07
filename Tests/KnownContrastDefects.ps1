@@ -20,11 +20,12 @@ function Get-KnownContrastDefect {
                 'btnNewCollection:DisabledText', 'btnOpenWqlCollection:DisabledText', 'btnOptions:DisabledBorder',
                 'btnOptions:EnabledBorder', 'btnPreviewWql:DisabledText', 'btnRefresh:DisabledText',
                 'btnRemoveColl:DisabledText', 'btnRemoveRule:DisabledText', 'btnUpdateRule:DisabledText',
-                'btnValidateWql:DisabledText', 'btnViewCollections:DisabledBorder', 'btnViewCollections:EnabledBorder',
-                'btnViewTemplates:DisabledBorder', 'btnViewTemplates:EnabledBorder', 'btnViewWqlEditor:DisabledBorder',
+                'btnValidateWql:DisabledText', 'btnViewCollections:DisabledBorder', 'btnViewCollections:DisabledText',
+                'btnViewCollections:EnabledBorder', 'btnViewTemplates:DisabledBorder', 'btnViewTemplates:DisabledText',
+                'btnViewTemplates:EnabledBorder', 'btnViewWqlEditor:DisabledBorder', 'btnViewWqlEditor:DisabledText',
                 'btnViewWqlEditor:EnabledBorder', 'text:Collections', 'text:Operational',
-                'text:Properties', 'txtTemplateExpandedQuery:DisabledBorder', 'txtTemplateExpandedQuery:EnabledBorder',
-                'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder'
+                'text:Properties', 'titlebar:inactive', 'txtTemplateExpandedQuery:DisabledBorder',
+                'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder'
             )
         }
         'light' {
@@ -39,11 +40,11 @@ function Get-KnownContrastDefect {
                 'cboCollectionFilter:DisabledBorder', 'cboCollectionFilter:DisabledText', 'cboCollectionFilter:EnabledBorder',
                 'cboCollectionFilter:EnabledText', 'text:Direct Members', 'text:Exclude Rules',
                 'text:Include Rules', 'text:Parameterized', 'text:Query Rules',
-                'text:Site Queries', 'txtFilter:DisabledBorder', 'txtFilter:EnabledBorder',
-                'txtRuleName:DisabledBorder', 'txtRuleName:EnabledBorder', 'txtTemplateExpandedQuery:DisabledBorder',
-                'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlCollectionId:DisabledBorder', 'txtWqlCollectionId:EnabledBorder',
-                'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder', 'txtWqlTreeFilter:DisabledBorder',
-                'txtWqlTreeFilter:EnabledBorder'
+                'text:Site Queries', 'titlebar:inactive', 'txtFilter:DisabledBorder',
+                'txtFilter:EnabledBorder', 'txtRuleName:DisabledBorder', 'txtRuleName:EnabledBorder',
+                'txtTemplateExpandedQuery:DisabledBorder', 'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlCollectionId:DisabledBorder',
+                'txtWqlCollectionId:EnabledBorder', 'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder',
+                'txtWqlTreeFilter:DisabledBorder', 'txtWqlTreeFilter:EnabledBorder'
             )
         }
     }

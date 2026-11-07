@@ -4,7 +4,7 @@ Measured 2026-11-06 with `Invoke-Checks.ps1` (Pester 5.7.1, PSScriptAnalyzer 1.2
 
 | | Before | After |
 |---|---|---|
-| Tests | 27 | 443 on Windows PowerShell 5.1 and on PowerShell 7 (30 contract tests skip on a machine without the console) |
+| Tests | 27 | 457 on Windows PowerShell 5.1 and on PowerShell 7 (32 contract tests skip on a machine without the console) |
 | Module coverage | 31.9% (109 of 342 commands) | 98.8% (427 of 432 commands) |
 | Lab steps | none | 33 (`Tests/Lab`) |
 
@@ -21,7 +21,7 @@ Run: `.\Invoke-Checks.ps1` (lint, tests, coverage floor 80%). It runs in CI on b
 | Script calls | `Script.Contract.Tests.ps1` | Every call from the script and the module into an app function or SuiteCommon names only parameters that exist |
 | Real cmdlet signatures | `CmCmdlet.Contract.Tests.ps1` | Every ConfigMgr call names only parameters that the real cmdlet has. Runs where the console is installed |
 | Start without the console | `Startup.Tests.ps1` | Plain message, `$false`, no raw exception |
-| Windows | `Window.Tests.ps1` | Main window and 4 dialogs: names, titles, no clipped text and nothing off screen at 1024x720 and 1440x900 in both themes and all three views, text and control contrast |
+| Windows | `Window.Tests.ps1` | Main window: names, titles, the dialogs' XAML parses and has named controls and distinct titles, no clipped text and nothing off screen at 1024x720 and 1440x900 in both themes and all three views, text and control contrast |
 | Lab | `Lab/Invoke-CollectionLab.ps1` | ZZTEST- collections and one ZZTEST- saved query on CM01: create, copy, properties, member, query rules (including a refused update), include, exclude, evaluate, built-in protection, WhatIf, remove. Checks that no other collection changed |
 
 ## Defects found
@@ -37,9 +37,14 @@ Run: `.\Invoke-Checks.ps1` (lint, tests, coverage floor 80%). It runs in CI on b
 | 7 | Template files read without an encoding (garbled on 5.1); an empty file gave one empty template | UTF-8 and null filter |
 | 8 | WQL editor buttons Update Rule and Remove were off screen at 1024 pixels | `WrapPanel` |
 | 9 | A built-in id with a leading space passed the `SMS*` guard | Trim the id |
+| 10 | Edit Membership cleared the device box and logged success when `Add-DirectMember` added nothing | Check the result, keep the box, say why |
+| 11 | Template expansion was sequential: a value that contained `{B}` pulled in parameter B | One pass over the template |
+| 12 | `Set-CollectionProperties` with refresh type 2 or 6 sent no schedule | Pass a 7-day schedule, as the create function does |
+| 13 | The exporters lost positional binding when `-Collections` was added | `Position` on the table, path and title |
 
 ## Not covered, and why
 
 - Contrast of disabled controls, the sidebar button border, the light text boxes and the unselected tab headers misses the standard (text 4.5:1, borders 3:1). The cause is the shared SuiteCommon palette and the MahApps styles. `Tests/KnownContrastDefects.ps1` lists each violation. The window test fails on a new one and on a listed one that is fixed. The fix belongs in `app-packager-suite`.
+- The dialogs are not shown with data, so their layout and contrast are not measured. The title bar of an inactive window misses 4.5:1 (listed as `titlebar:inactive`). The border of a disabled sidebar button is read from the button, not from the template border at half opacity.
 - The connect and refresh handlers, the dialogs' button logic and the WQL tree run inside the window with a site. The lab run covers the module calls that they make, not the clicks.
 - The settings save in SuiteCommon is not atomic. The fix belongs in `app-packager-suite`.

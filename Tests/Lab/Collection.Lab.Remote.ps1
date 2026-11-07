@@ -52,6 +52,9 @@ try {
     Set-CollectionProperties -CollectionId $a.CollectionID -Comment 'ZZTEST changed' -RefreshType 4
     $d = Get-CollectionDetail -CollectionId $a.CollectionID
     Add-Result 'set refresh type to Continuous' ($d.RefreshType -eq 4 -and $d.Comment -eq 'ZZTEST changed') "RefreshType=$($d.RefreshType) Comment=$($d.Comment)"
+    Set-CollectionProperties -CollectionId $a.CollectionID -RefreshType 2
+    $d = Get-CollectionDetail -CollectionId $a.CollectionID
+    Add-Result 'set refresh type to Periodic (with a schedule)' ($d.RefreshType -eq 2) "RefreshType=$($d.RefreshType)"
     $threw = $false; try { Set-CollectionProperties -CollectionId $a.CollectionID -RefreshType 3 } catch { $threw = $true }
     Add-Result 'refresh type 3 is rejected before the site is called' $threw ''
 
@@ -138,22 +141,22 @@ finally {
         if (-not (Test-CMConnection)) { [void](Connect-CMSite -SiteCode $SiteCode -SMSProvider $Provider) }
         # A collection that another one includes or excludes cannot go first: retry in passes.
         for ($pass = 1; $pass -le 3; $pass++) {
-            foreach ($coll in @(Get-CMDeviceCollection -Name 'ZZTEST-*' -ErrorAction SilentlyContinue)) {
-                if ($coll.Name -notlike 'ZZTEST-*') { continue }
+            foreach ($coll in @(Get-CMDeviceCollection -Name "ZZTEST-CM-$tag-*" -ErrorAction SilentlyContinue)) {
+                if ($coll.Name -notlike "ZZTEST-CM-$tag-*") { continue }
                 try { Remove-CMDeviceCollection -CollectionId $coll.CollectionID -Force -ErrorAction Stop }
                 catch { if ($pass -eq 3) { Add-Result "cleanup collection $($coll.Name)" $false $_.Exception.Message } }
             }
         }
-        foreach ($sq in @(Get-CMQuery -Name 'ZZTEST-*' -ErrorAction SilentlyContinue)) {
-            if ($sq.Name -like 'ZZTEST-*') {
+        foreach ($sq in @(Get-CMQuery -Name "ZZTEST-CM-$tag-*" -ErrorAction SilentlyContinue)) {
+            if ($sq.Name -like "ZZTEST-CM-$tag-*") {
                 try { Remove-CMQuery -Id $sq.QueryID -Force -ErrorAction Stop } catch { Add-Result "cleanup query $($sq.Name)" $false $_.Exception.Message }
             }
         }
     } catch { Add-Result 'cleanup' $false $_.Exception.Message }
     try {
-        $left = @(Get-CimInstance -Namespace $ns -ClassName SMS_Collection -Filter "Name LIKE 'ZZTEST-%'")
-        $leftQ = @(Get-CimInstance -Namespace $ns -ClassName SMS_Query -Filter "Name LIKE 'ZZTEST-%'" -ErrorAction SilentlyContinue)
-        Add-Result 'no ZZTEST- object remains' ($left.Count -eq 0 -and $leftQ.Count -eq 0) ((@($left | ForEach-Object Name) + @($leftQ | ForEach-Object Name)) -join ',')
+        $left = @(Get-CimInstance -Namespace $ns -ClassName SMS_Collection -Filter "Name LIKE 'ZZTEST-CM-$tag-%'")
+        $leftQ = @(Get-CimInstance -Namespace $ns -ClassName SMS_Query -Filter "Name LIKE 'ZZTEST-CM-$tag-%'" -ErrorAction SilentlyContinue)
+        Add-Result 'no ZZTEST- object of this run remains' ($left.Count -eq 0 -and $leftQ.Count -eq 0) ((@($left | ForEach-Object Name) + @($leftQ | ForEach-Object Name)) -join ',')
         if ($snapshot) {
             $after = Get-CollectionSnapshot
             Add-Result 'other collections are unchanged' ((@($snapshot) -join "`n") -ceq (@($after) -join "`n")) ''
