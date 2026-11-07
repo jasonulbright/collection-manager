@@ -59,6 +59,16 @@ Describe 'Test-WindowTestsAllowed' {
     }
 }
 
+Describe 'Test-WindowTestsAllowed decides on the opt-in only' {
+    It 'has no ComputerName parameter' {
+        (Get-Command Test-WindowTestsAllowed).Parameters.Keys | Should -Not -Contain 'ComputerName'
+    }
+
+    It 'allows when the opt-in is 1, whatever the machine' {
+        (Test-WindowTestsAllowed -OptIn '1').Allowed | Should -BeTrue
+    }
+}
+
 Describe 'Window test files carry the guard' {
     It 'finds at least one test file that can open a window' -ForEach @(@{ Found = @($script:WindowTestFiles).Count }) {
         $Found | Should -BeGreaterThan 0
