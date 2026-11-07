@@ -19,7 +19,7 @@ None.
 | Message | Where | Cause | Fix |
 |---|---|---|---|
 | `Open Options to configure site code and SMS provider` | Status bar | The site code or the provider is empty. | Set both in **Options > Connection**. |
-| `ConfigurationManager module not found.` | Log | The console is not installed on this computer, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
+| `Refresh failed: Failed to connect to site <code> (provider <name>).` | Log | The console is not installed on this computer, or the provider name is wrong or not reachable, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Check the provider name. Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
 | `Refresh failed:` and `Refresh failed.` | Log, status bar | The tool could not connect or read. | Read the log line for the reason. |
 | `Edit Membership: built-in collections are read-only.` | Log | The collection is built-in. | Select a custom collection. |
 | `Remove: built-in collection <ID> cannot be deleted.` | Log | The same. | The same. |

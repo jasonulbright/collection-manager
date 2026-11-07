@@ -79,7 +79,7 @@ try {
             param($a, $user, $json, $prefsName)
             if ($json) { Set-Content "C:\guide\$a\$prefsName" $json -Encoding UTF8 }
             Remove-Item C:\guide\ui\out -Recurse -Force -ErrorAction SilentlyContinue
-            $act = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\guide\ui\main.ps1 -App '$a'"
+            $act = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\guide\ui\main.ps1 -App `"$a`""
             $pr = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Highest
             Register-ScheduledTask -TaskName GuideShots -Action $act -Principal $pr -Force | Out-Null
             Start-ScheduledTask GuideShots

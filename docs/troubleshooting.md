@@ -19,7 +19,7 @@ None.
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | Refresh does nothing and the status bar asks you to open Options. | The site code or the provider is empty. | Set the connection. |
-| `ConfigurationManager module not found`. | The console is not installed on this computer, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
+| `Refresh failed: Failed to connect to site <code> (provider <name>).` | The console is not installed on this computer, or the provider name is wrong, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Check the provider name. Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
 | The WQL tree is empty. | No full refresh has run. | Select **Refresh** on the Collections view, or use **Open by ID**. |
 | **Edit Membership...** or **Remove...** opens nothing. | The collection is built-in. | Select a custom collection. |
 | The Site Queries list is empty. | The list was not refreshed, or the site saves no query. | Select **Refresh** on the Site Queries tab. |

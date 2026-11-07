@@ -77,7 +77,7 @@ None. The settings are on [Options dialog](core/options.md).
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | The log shows that the site code and the SMS provider must be set in Options. | The site code or the provider is empty. | Set the connection. |
-| The log shows `ConfigurationManager module not found`. | The console is not installed on this computer, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
+| The log shows `Refresh failed: Failed to connect to site <code> (provider <name>).` | The console is not installed on this computer, or the provider name is wrong, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Check the provider name. Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
 
 ## Links
 

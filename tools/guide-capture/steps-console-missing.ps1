@@ -9,8 +9,8 @@ $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'
 Size-Win $win 1440 900
 $win = Find-Top 'Collection Manager' 10
 Invoke-El (Get-El $win 'btnRefresh')
-# Wait for the log to show the missing-console message. A fixed sleep is not evidence.
-if (-not (Wait-Until { (Get-ElText (Get-El $win 'txtLog')) -match 'ConfigurationManager module not found' } 30)) { throw 'The missing-console message did not show in the log.' }
+# Wait for the log to show the failed refresh. A fixed sleep is not evidence.
+if (-not (Wait-Until { (Get-ElText (Get-El $win 'txtLog')) -match 'Refresh failed: Failed to connect' } 30)) { throw 'The message Refresh failed did not show in the log.' }
 Start-Sleep -Seconds 1
 Shot $win 'console-missing-refresh'
 Stop-App 'start-collectionmanager.ps1'
