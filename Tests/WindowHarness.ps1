@@ -11,19 +11,17 @@
 # AfterAll.
 #
 # A window test opens a window only where Test-WindowTestsAllowed says so: the
-# environment variable SUITE_ALLOW_WINDOW_TESTS is 1 and the computer is not the
-# dev PC (AYW). Each window test file computes the guard in BeforeDiscovery and
-# skips its window Describe blocks. Get-WpfSession refuses too, so no code path
-# creates a runspace on a machine where the guard says no.
+# environment variable SUITE_ALLOW_WINDOW_TESTS is 1. Each window test file
+# computes the guard in BeforeDiscovery and skips its window Describe blocks.
+# Get-WpfSession refuses too, so no code path creates a runspace when the
+# guard says no.
 
 function Test-WindowTestsAllowed {
     [CmdletBinding()]
     param(
-        [string]$ComputerName = [Environment]::MachineName,
         [string]$OptIn = $env:SUITE_ALLOW_WINDOW_TESTS
     )
-    if ($ComputerName -ieq 'AYW') { return [pscustomobject]@{ Allowed = $false; Reason = 'dev PC (AYW): window tests never run here' } }
-    if ($OptIn -ne '1')           { return [pscustomobject]@{ Allowed = $false; Reason = 'SUITE_ALLOW_WINDOW_TESTS is not 1' } }
+    if ($OptIn -ne '1') { return [pscustomobject]@{ Allowed = $false; Reason = 'SUITE_ALLOW_WINDOW_TESTS is not 1' } }
     [pscustomobject]@{ Allowed = $true; Reason = '' }
 }
 
