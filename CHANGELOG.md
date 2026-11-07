@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.11.07.0018] - 2026-11-07
+
+## 2 fixes and a user guide
+
+### Fixed
+
+- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
+- Show the tab headers in the theme text color, bold when selected, at size 13. The unselected headers failed the 4.5:1 contrast test and the MahApps default size of 26 made them much larger than the other text.
+
+### Added
+
+- Add the user guide (docs/index.md) with images of the running window.
+- Add tools/guide-capture, one command that regenerates every image of the guide on a lab computer.
+
 ## [2026.11.06.0017] - 2026-11-06
 
 ## 9 fixes in collection actions, exports and templates
