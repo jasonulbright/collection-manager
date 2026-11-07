@@ -20,7 +20,6 @@
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Fix Export CSV and Export HTML on the Collections view. The buttons called the export functions with a parameter that they did not have, so every export failed.
 - Fix the Templates view. The loader passed -Path to functions that take -TemplatesPath, so no template loaded.
 - Keep the old query rule when the site refuses the new one in Update Rule. The old rule was removed first and lost. It is now added back and the error says so.
@@ -42,7 +41,6 @@
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Fix the collection picker returning a selection when closed with X.
 
 ## [2026.10.12.0015] - 2026-10-12
@@ -51,7 +49,6 @@
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Keep the PowerShell 7 module roots when the tool runs under PowerShell 7.
 
 ## [2026.10.11.0014] - 2026-10-11
@@ -60,7 +57,6 @@
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Double-click the title bar to maximize or restore the window.
 
 ## [2026.10.11.0013] - 2026-10-11
@@ -98,14 +94,12 @@ file.
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Avoid repeated array copies while parsing direct, query, include, and exclude rules during large inventory scans.
 
 ## [2026.09.21.0009] - 2026-09-21
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - Use the site code and provider from the suite launcher when the tool has none saved.
 
 ### Changed
@@ -124,7 +118,6 @@ file.
 
 ### Fixed
 
-- Fix the start. The script called Add_Selected on a tab item, which has no such event, so the window did not open. It now loads the saved site queries when you select the Site Queries tab, with a SelectionChanged handler on the tab control.
 - **Version labels read the script header.** The sidebar version and the
   About panel carried literal version strings that no release updated;
   both now read the entry script's `Version` header at startup, so the

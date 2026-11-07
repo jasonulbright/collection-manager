@@ -42,7 +42,7 @@ Describe 'User guide' {
         $strIndex = [regex]::Replace((Get-Content -LiteralPath (Join-Path -Path $script:strDocsRoot -ChildPath 'index.md') -Raw), '(?s)```.*?```', '')
         $arrOrphan = foreach ($objPage in $script:arrPage) {
             $strRelative = $objPage.FullName.Substring($script:strDocsRoot.Length + 1).Replace('\', '/')
-            if ($strRelative -ne 'index.md' -and $strIndex -notmatch [regex]::Escape('](' + $strRelative + ')')) { $strRelative }
+            if ($strRelative -ne 'index.md' -and $strIndex -notmatch ('(?<!\!)\[[^\]]*\]\(' + [regex]::Escape($strRelative) + '\)')) { $strRelative }
         }
         @($arrOrphan) | Should -BeNullOrEmpty
     }

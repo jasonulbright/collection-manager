@@ -4,7 +4,7 @@ This page lists every outbound call of Collection Manager.
 
 ## What it does
 
-The tool talks to the SMS Provider through the console module. When it is installed by the suite installer, it also checks GitHub once a day for a newer suite version. It sends no user data and no telemetry.
+The tool talks to the SMS Provider through the console module. When it is installed by the suite installer, it also checks GitHub once a day for a newer suite version. The WQL queries that you send to the SMS Provider can contain values that you typed, for example a device name. The GitHub update check sends no user data and no telemetry.
 
 ## When to use it
 
@@ -29,7 +29,7 @@ None.
 
 | Message or symptom | Cause | Fix |
 |---|---|---|
-| `Refresh failed:` | The provider is not reachable. | Check the name, the firewall and the role. |
+| `Refresh failed:` | The provider is not reachable, or the console is missing. | Check the name, the firewall and the role. For a missing console see [Error messages](error-messages.md). |
 
 ## Links
 

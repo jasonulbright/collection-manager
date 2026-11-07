@@ -1,7 +1,7 @@
 $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'
 Size-Win $win 1440 900
 $win = Find-Top 'Collection Manager' 10
-function Idle([string]$id = 'btnRefresh', [int]$sec = 300) { Start-Sleep -Seconds 2; $null = Wait-Until { $b = Get-El $win $id -Quiet; $b -and $b.Current.IsEnabled } $sec; Start-Sleep -Seconds 2 }
+function Idle([string]$id = 'btnRefresh', [int]$sec = 300) { Start-Sleep -Seconds 2; if (-not (Wait-Until { $b = Get-El $win $id -Quiet; $b -and $b.Current.IsEnabled } $sec)) { throw ("Timeout: $id did not become enabled in $sec seconds.") }; Start-Sleep -Seconds 2 }
 function Rows($grid) { @((Get-El $win $grid).FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem)))) }
 function Find-Row($grid, [string]$name) { @(Rows $grid) | Where-Object { $_.Current.Name -match ('Name=' + [regex]::Escape($name) + ';') } | Select-Object -First 1 }
 function Select-Row($grid, [string]$name) { $r = Find-Row $grid $name; if (-not $r) { Log ('ERROR: no row ' + $name + ' in ' + $grid); return $false }; Select-El $r; Start-Sleep -Milliseconds 600; return $true }

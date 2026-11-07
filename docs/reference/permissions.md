@@ -35,7 +35,7 @@ Use it to set up an account, or to find out why a read or a change is refused.
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | `Refresh failed:` | The account has no access to the provider, or the console is missing. | Check the role, the provider name and the console. |
-| `<action> failed:` in the log | The role lacks a right. | Use an account with the right. |
+| `<action> failed:` in the log | The action failed. | Read the exception message. Check the permissions only when the message shows an access failure. |
 
 ## Links
 

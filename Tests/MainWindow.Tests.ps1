@@ -29,7 +29,9 @@ Describe 'Main window tabs' {
         $nodeStyle = $script:xmlWindow.SelectSingleNode("//w:Style[@x:Key='TabHeaderText']", $script:nsWpf)
         $nodeStyle | Should -Not -BeNullOrEmpty
         $nodeTrigger = $nodeStyle.SelectSingleNode('w:Style.Triggers/w:DataTrigger', $script:nsWpf)
+        $nodeStyle.SelectSingleNode("w:Setter[@Property='FontSize']", $script:nsWpf).GetAttribute('Value') | Should -BeExactly '13'
         $nodeTrigger.GetAttribute('Binding') | Should -Match 'IsSelected'
+        $nodeTrigger.GetAttribute('Binding') | Should -Match 'RelativeSource=\{RelativeSource AncestorType=TabItem\}'
         $nodeTrigger.GetAttribute('Value') | Should -BeExactly 'True'
         $nodeTrigger.SelectSingleNode("w:Setter[@Property='FontWeight']", $script:nsWpf).GetAttribute('Value') | Should -BeExactly 'Bold'
     }
@@ -43,5 +45,12 @@ Describe 'Start script event wiring' {
         foreach ($strName in $arrTabName) {
             $strScript | Should -Not -Match ('\${0}\.Add_Selected' -f [regex]::Escape($strName))
         }
+    }
+}
+
+Describe 'Site Queries tab loading' {
+    It 'loads the saved site queries from a SelectionChanged handler on the WQL source tab control' {
+        $strScript = Get-Content -LiteralPath (Join-Path -Path (Split-Path -Path $script:strXamlPath -Parent) -ChildPath 'start-collectionmanager.ps1') -Raw
+        $strScript | Should -Match '(?s)\$tabWqlSource\.Add_SelectionChanged\(\{.*?\$tabWqlSource\.SelectedItem -ne \$tabSiteQueries.*?Sync-SiteSavedQueryCache'
     }
 }

@@ -30,7 +30,8 @@ None.
 
 1. Close the tool.
 2. Delete `CollectionManager.prefs.json` and `CollectionManager.windowstate.json`.
-3. Start the tool. The window of the first start shows.
+3. If the suite launcher started the tool, clear the environment variables `SUITE_CM_SITECODE` and `SUITE_CM_PROVIDER` too. The tool takes the site code and the provider from them when the settings are empty.
+4. Start the tool. The window of the first start shows.
 
 ## Limits
 

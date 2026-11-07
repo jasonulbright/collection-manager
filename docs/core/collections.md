@@ -111,7 +111,7 @@ A built-in collection has an ID that starts with `SMS`. The tool does not change
 
 ## Limits
 
-- The buttons that change a collection are disabled until a row is selected.
+- **New Collection** works after **Connect Site**. It needs no selected row and no full refresh. The other buttons need a selected row. Without one, the log says to pick a collection first.
 - The direct members load when you open the tab or the dialog. A large collection takes longer.
 - The tool does not delete a built-in collection.
 

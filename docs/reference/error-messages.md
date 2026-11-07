@@ -24,7 +24,7 @@ None.
 | `Edit Membership: built-in collections are read-only.` | Log | The collection is built-in. | Select a custom collection. |
 | `Remove: built-in collection <ID> cannot be deleted.` | Log | The same. | The same. |
 | `Add direct member: no device was added for "<name>".` | Log | The name does not match one device, or the lookup failed. | Type the exact device name. |
-| `WQL validate:` followed by an error | Log | The query has a syntax error. | Correct the query. |
+| `WQL validate:` followed by an error | Log | The query has a syntax error, or the SMS Provider is not available, or the account has no access. | Read the error. Correct the query only when the error names the query. Otherwise check the connection and the permissions. |
 | `Refresh first to establish a CM connection.` | Text next to the WQL buttons | No connection is open. | Select **Connect Site** or **Refresh**. |
 
 The image shows **Refresh** on a computer without the console. The window stays open, the grid stays empty and the log names the cause.
