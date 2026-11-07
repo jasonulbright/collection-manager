@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026.11.07.0019] - 2026-11-07
+
+## 1 shared library refresh and window tests that cannot steal focus
+
+### Added
+
+- Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1 and never on the dev PC. Elsewhere they report Skipped, and the console shows the reason. The CI workflow sets the variable.
+- Add WindowGuard.Tests.ps1, which tests the guard and checks that every test file that can open a window carries it.
+- Print one line in Invoke-Checks.ps1 when the window tests are skipped.
+
+### Changed
+
+- Refresh the vendored SuiteCommon library to release 2026.11.07.0075.
+
 ## [2026.11.07.0018] - 2026-11-07
 
 ## 2 fixes and a user guide
