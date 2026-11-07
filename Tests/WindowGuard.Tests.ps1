@@ -46,6 +46,37 @@ Describe 'Test-WindowTestsAllowed decides on the opt-in only' {
     }
 }
 
+Describe 'Test-WindowTestsAllowed reads SUITE_ALLOW_WINDOW_TESTS when called without -OptIn' {
+    BeforeAll { $script:SavedOptIn = $env:SUITE_ALLOW_WINDOW_TESTS }
+    AfterAll {
+        if ($null -eq $script:SavedOptIn) { Remove-Item Env:\SUITE_ALLOW_WINDOW_TESTS -ErrorAction SilentlyContinue }
+        else { $env:SUITE_ALLOW_WINDOW_TESTS = $script:SavedOptIn }
+    }
+
+    It 'allows when the variable is 1' {
+        $env:SUITE_ALLOW_WINDOW_TESTS = '1'
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeTrue
+        $r.Reason | Should -BeNullOrEmpty
+    }
+
+    It 'refuses when the variable is <Label>' -ForEach @(
+        @{ Label = '0'; Value = '0' }
+        @{ Label = 'true'; Value = 'true' }
+        @{ Label = 'empty'; Value = '' }
+    ) {
+        $env:SUITE_ALLOW_WINDOW_TESTS = $Value
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeFalse
+        $r.Reason | Should -Be 'SUITE_ALLOW_WINDOW_TESTS is not 1'
+    }
+
+    It 'refuses when the variable is not set' {
+        Remove-Item Env:\SUITE_ALLOW_WINDOW_TESTS -ErrorAction SilentlyContinue
+        (Test-WindowTestsAllowed).Allowed | Should -BeFalse
+    }
+}
+
 Describe 'Window test files carry the guard' {
     It 'finds at least one test file that can open a window' -ForEach @(@{ Found = @($script:WindowTestFiles).Count }) {
         $Found | Should -BeGreaterThan 0
