@@ -19,7 +19,7 @@
 function Test-WindowTestsAllowed {
     [CmdletBinding()]
     param(
-        [string]$ComputerName = $env:COMPUTERNAME,
+        [string]$ComputerName = [Environment]::MachineName,
         [string]$OptIn = $env:SUITE_ALLOW_WINDOW_TESTS
     )
     if ($ComputerName -ieq 'AYW') { return [pscustomobject]@{ Allowed = $false; Reason = 'dev PC (AYW): window tests never run here' } }

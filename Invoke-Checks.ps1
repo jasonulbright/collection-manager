@@ -45,11 +45,12 @@ Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
 # and the run still passes. The coverage floor stays in force: the window tests run no module
 # code, so skipping them does not lower the module coverage.
 . (Join-Path $root 'Tests\WindowHarness.ps1')
-if (-not $SkipWindow -and -not (Test-WindowTestsAllowed).Allowed) {
-    if ($env:COMPUTERNAME -ieq 'AYW') { Write-Host 'Window tests skipped: dev PC (AYW). Run them on CM01/CLIENT01 or in CI.' }
+$windowSkipReported = $false
+$windowGuard = Test-WindowTestsAllowed
+if (-not $SkipWindow -and -not $windowGuard.Allowed) {
+    if ($windowGuard.Reason -like 'dev PC*') { Write-Host 'Window tests skipped: dev PC (AYW). Run them on CM01/CLIENT01 or in CI.' }
     else { Write-Host 'Window tests skipped: SUITE_ALLOW_WINDOW_TESTS is not 1.' }
-    # Window.Tests.ps1 prints the same reason when run alone. This marker keeps it quiet in this run.
-    $env:SUITE_WINDOW_GUARD_REPORTED = '1'
+    $windowSkipReported = $true
 }
 
 # ---- 1. Lint ---------------------------------------------------------------
@@ -86,7 +87,12 @@ $cfg.Output.Verbosity = 'Minimal'
 $cfg.CodeCoverage.Enabled = $true
 $cfg.CodeCoverage.OutputPath = Join-Path ([System.IO.Path]::GetTempPath()) 'cm-coverage.xml'
 $cfg.CodeCoverage.Path = @(Get-ChildItem -LiteralPath (Join-Path $root 'Module') -Filter '*.psm1' -File | ForEach-Object FullName)
-$result = Invoke-Pester -Configuration $cfg
+# Window.Tests.ps1 prints the same reason when it runs alone. The marker keeps it quiet during
+# this run only, and the previous value comes back afterwards, so a later standalone run is not muted.
+$previousMarker = $env:SUITE_WINDOW_GUARD_REPORTED
+if ($windowSkipReported) { $env:SUITE_WINDOW_GUARD_REPORTED = '1' }
+try { $result = Invoke-Pester -Configuration $cfg }
+finally { $env:SUITE_WINDOW_GUARD_REPORTED = $previousMarker }
 
 $cov = $result.CodeCoverage
 # Keep the unrounded value for the floor: 79.96 must not round up to 80.

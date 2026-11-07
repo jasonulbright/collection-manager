@@ -6,7 +6,7 @@
 
 ### Added
 
-- Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1 and never on the dev PC. Elsewhere they report Skipped with the reason. The CI workflow sets the variable.
+- Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1 and never on the dev PC. Elsewhere they report Skipped, and the console shows the reason. The CI workflow sets the variable.
 - Add WindowGuard.Tests.ps1, which tests the guard and checks that every test file that can open a window carries it.
 - Print one line in Invoke-Checks.ps1 when the window tests are skipped.
 
