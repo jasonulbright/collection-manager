@@ -18,8 +18,8 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 2026.11.06.0017
-    Updated    : 2026-11-06
+    Version    : 2026.11.07.0018
+    Updated    : 2026-11-07
 #>
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification='Per feedback_ps_wpf_handler_rules.md and PS51-WPF-001..003: flat-.ps1 GetNewClosure strips $script: scope. $global: survives closure scope-strip and keeps shared mutable state reachable from closure-captured handlers.')]
@@ -174,6 +174,7 @@ $txtWqlTreeFilter      = $window.FindName('txtWqlTreeFilter')
 $txtWqlCollectionId    = $window.FindName('txtWqlCollectionId')
 $btnOpenWqlCollection  = $window.FindName('btnOpenWqlCollection')
 $tabSiteQueries        = $window.FindName('tabSiteQueries')
+$tabWqlSource          = $window.FindName('tabWqlSource')
 $txtSavedQueryFilter   = $window.FindName('txtSavedQueryFilter')
 $gridSavedQueries      = $window.FindName('gridSavedQueries')
 $txtSavedQueryName     = $window.FindName('txtSavedQueryName')
@@ -940,7 +941,9 @@ $btnLoadSavedQuery.Add_Click({ [void](Show-SelectedSiteSavedQuery) })
 $btnSaveSiteQuery.Add_Click({ [void](Save-NewSiteSavedQuery) })
 $btnUpdateSiteQuery.Add_Click({ [void](Update-SelectedSiteSavedQuery) })
 $btnDeleteSiteQuery.Add_Click({ [void](Remove-SelectedSiteSavedQuery) })
-$tabSiteQueries.Add_Selected({
+$tabWqlSource.Add_SelectionChanged({
+    param($s, $e)
+    if ($e.OriginalSource -ne $tabWqlSource -or $tabWqlSource.SelectedItem -ne $tabSiteQueries) { return }
     if ($script:IsConnected -and -not $script:SiteSavedQueriesLoaded) {
         [void](Sync-SiteSavedQueryCache -SelectQueryId '')
     }
