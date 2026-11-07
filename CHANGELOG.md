@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026.11.06.0017] - 2026-11-06
+
+## 7 fixes in collection actions, exports and templates
+
+### Fixed
+
+- Fix Export CSV and Export HTML on the Collections view. The buttons called the export functions with a parameter that they did not have, so every export failed.
+- Fix the Templates view. The loader passed -Path to functions that take -TemplatesPath, so no template loaded.
+- Keep the old query rule when the site refuses the new one in Update Rule. The old rule was removed first and lost. It is now added back and the error says so.
+- Apply the refresh type in Set-CollectionProperties. The parameter was accepted and ignored. A value other than 1, 2, 4 or 6 now throws before the site is called.
+- Add a device to a collection only by its exact name. A wildcard such as * matched many devices and added all of them. A name that matches no device or several devices adds nothing.
+- Return the cloned collection from Copy-ManagedCollection. It returned the source collection. Read the template files as UTF-8, and stop an empty template file from giving one empty template.
+- Show the whole WQL editor button row at 1024 pixels wide. Update Rule and Remove were cut off. The row now wraps.
+
+### Added
+
+- Support -WhatIf and -Confirm in every function of the module that changes the site.
+- Export-CollectionCsv and Export-CollectionHtml accept -Collections and -Columns as well as -DataTable.
+
 ## [2026.10.25.0016] - 2026-10-25
 
 ## 1 fix
