@@ -9,6 +9,23 @@
 # theme manager keeps handlers of closed windows from earlier threads, and the
 # next theme change waits on their dead dispatchers. Call Close-WpfSession in
 # AfterAll.
+#
+# A window test opens a window only where Test-WindowTestsAllowed says so: the
+# environment variable SUITE_ALLOW_WINDOW_TESTS is 1 and the computer is not the
+# dev PC (removed). Each window test file computes the guard in BeforeDiscovery and
+# skips its window Describe blocks. Get-WpfSession refuses too, so no code path
+# creates a runspace on a machine where the guard says no.
+
+function Test-WindowTestsAllowed {
+    [CmdletBinding()]
+    param(
+        [string]$ComputerName = [Environment]::MachineName,
+        [string]$OptIn = $env:SUITE_ALLOW_WINDOW_TESTS
+    )
+    if ($ComputerName -ieq 'removed') { return [pscustomobject]@{ Allowed = $false; Reason = 'dev PC (removed): window tests never run here' } }
+    if ($OptIn -ne '1')           { return [pscustomobject]@{ Allowed = $false; Reason = 'SUITE_ALLOW_WINDOW_TESTS is not 1' } }
+    [pscustomobject]@{ Allowed = $true; Reason = '' }
+}
 
 $script:HarnessRoot = Split-Path -Parent $PSScriptRoot
 . "$PSScriptRoot\WindowMeasure.ps1"
@@ -97,6 +114,8 @@ $script:HarnessBootstrap = {
 }
 
 function Get-WpfSession {
+    $guard = Test-WindowTestsAllowed
+    if (-not $guard.Allowed) { throw ('Window tests are not allowed here: {0}.' -f $guard.Reason) }
     if ($script:HarnessSession -and $script:HarnessSession.RunspaceStateInfo.State -eq 'Opened') { return $script:HarnessSession }
     $rs = [runspacefactory]::CreateRunspace()
     $rs.ApartmentState = 'STA'
