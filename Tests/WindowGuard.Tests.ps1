@@ -6,9 +6,10 @@
 
 BeforeDiscovery {
     # Every other test file that can open a window must carry the guard.
-    $script:WindowTestFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.Tests.ps1' -File |
-            Where-Object { $_.Name -ne 'WindowGuard.Tests.ps1' -and (Get-Content -LiteralPath $_.FullName -Raw) -match 'Invoke-WpfSta|New-WpfWindow|ShowDialog|\.Show\(\)' } |
-            ForEach-Object { @{ Name = $_.Name; Path = $_.FullName } })
+    # Same scope as Invoke-Checks.ps1: nested folders count, the lab scripts do not run as tests.
+    $script:WindowTestFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.Tests.ps1' -File -Recurse |
+            Where-Object { $_.Name -ne 'WindowGuard.Tests.ps1' -and $_.FullName -notlike '*\Lab\*' -and (Get-Content -LiteralPath $_.FullName -Raw) -match 'Invoke-WpfSta|New-WpfWindow|ShowDialog|\.Show\(\)' } |
+            ForEach-Object { @{ Name = $_.FullName.Substring($PSScriptRoot.Length + 1); Path = $_.FullName } })
 }
 
 BeforeAll {
@@ -72,5 +73,38 @@ Describe 'Window test files carry the guard' {
         $text = Get-Content -LiteralPath $Path -Raw
         $text | Should -Match 'Test-WindowTestsAllowed'
         $text | Should -Match '-Skip:'
+    }
+
+    It '<Name> applies the guard to every top-level Describe' -ForEach $script:WindowTestFiles {
+        $describes = @(Get-Content -LiteralPath $Path | Where-Object { $_ -match '^\s*Describe' })
+        $describes.Count | Should -BeGreaterThan 0
+        @($describes | Where-Object { $_ -notmatch '-Skip:\(-not \$script:WindowGuard\.Allowed\)' }) | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Get-WpfSession refuses where the guard says no' {
+    BeforeAll {
+        Mock Test-WindowTestsAllowed { [pscustomobject]@{ Allowed = $false; Reason = 'test' } }
+    }
+    AfterEach { $script:HarnessSession = $null }
+
+    It 'throws and creates no session' {
+        $script:HarnessSession = $null
+        { Get-WpfSession } | Should -Throw '*not allowed*'
+        $script:HarnessSession | Should -BeNullOrEmpty
+    }
+
+    It 'does not hand out a cached session' {
+        $script:HarnessSession = [pscustomobject]@{ RunspaceStateInfo = [pscustomobject]@{ State = 'Opened' } }
+        { Get-WpfSession } | Should -Throw '*not allowed*'
+    }
+}
+
+Describe 'Machine identity' {
+    It 'takes the computer name from the machine, not from the COMPUTERNAME variable' {
+        foreach ($f in 'WindowHarness.ps1', '..\Invoke-Checks.ps1') {
+            (Get-Content -LiteralPath (Join-Path $PSScriptRoot $f) -Raw) | Should -Not -Match '\$env:COMPUTERNAME'
+        }
+        (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'WindowHarness.ps1') -Raw) | Should -Match 'MachineName'
     }
 }
