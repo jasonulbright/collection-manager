@@ -63,6 +63,11 @@ Describe 'Window test files carry the guard' {
         $Found | Should -BeGreaterThan 0
     }
 
+    It 'prints the skip reason once: Invoke-Checks sets the marker and Window.Tests reads it' {
+        (Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'Invoke-Checks.ps1') -Raw) | Should -Match '\$env:SUITE_WINDOW_GUARD_REPORTED\s*=\s*''1'''
+        (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Window.Tests.ps1') -Raw) | Should -Match '-not \$env:SUITE_WINDOW_GUARD_REPORTED'
+    }
+
     It '<Name> calls Test-WindowTestsAllowed and applies -Skip' -ForEach $script:WindowTestFiles {
         $text = Get-Content -LiteralPath $Path -Raw
         $text | Should -Match 'Test-WindowTestsAllowed'

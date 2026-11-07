@@ -8,7 +8,7 @@ BeforeDiscovery {
     # The guard decides before any runspace or window exists. A skipped run says why, once.
     . "$PSScriptRoot\WindowHarness.ps1"
     $script:WindowGuard = Test-WindowTestsAllowed
-    if (-not $script:WindowGuard.Allowed) { Write-Host ('Window tests skipped: {0}.' -f $script:WindowGuard.Reason) }
+    if (-not $script:WindowGuard.Allowed -and -not $env:SUITE_WINDOW_GUARD_REPORTED) { Write-Host ('Window tests skipped: {0}.' -f $script:WindowGuard.Reason) }
     $script:Matrix = foreach ($dark in $true, $false) {
         foreach ($size in @(@(1024, 720), @(1440, 900))) {
             @{ Dark = $dark; Theme = $(if ($dark) { 'dark' } else { 'light' }); W = $size[0]; H = $size[1]; Size = ('{0}x{1}' -f $size[0], $size[1]) }

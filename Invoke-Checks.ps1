@@ -48,6 +48,8 @@ Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
 if (-not $SkipWindow -and -not (Test-WindowTestsAllowed).Allowed) {
     if ($env:COMPUTERNAME -ieq 'AYW') { Write-Host 'Window tests skipped: dev PC (AYW). Run them on CM01/CLIENT01 or in CI.' }
     else { Write-Host 'Window tests skipped: SUITE_ALLOW_WINDOW_TESTS is not 1.' }
+    # Window.Tests.ps1 prints the same reason when run alone. This marker keeps it quiet in this run.
+    $env:SUITE_WINDOW_GUARD_REPORTED = '1'
 }
 
 # ---- 1. Lint ---------------------------------------------------------------
