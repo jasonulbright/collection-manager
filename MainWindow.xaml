@@ -557,7 +557,7 @@
                                  BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"/>
 
                         <Border Grid.Row="6" Padding="0,8,0,8">
-                            <StackPanel Orientation="Horizontal">
+                            <WrapPanel Orientation="Horizontal">
                                 <Button x:Name="btnValidateWql" Content="Validate Query"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
                                         ToolTip="Run a syntax check on the WQL editor contents"/>
                                 <Button x:Name="btnPreviewWql"  Content="Preview Results" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
@@ -571,7 +571,7 @@
                                 <TextBlock x:Name="txtWqlValidation" FontSize="12"
                                            VerticalAlignment="Center" Margin="8,0,0,0"
                                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-                            </StackPanel>
+                            </WrapPanel>
                         </Border>
                     </Grid>
                 </Grid>
