@@ -18,8 +18,8 @@
 
 .NOTES
     ScriptName : start-collectionmanager.ps1
-    Version    : 2026.10.25.0016
-    Updated    : 2026-10-07
+    Version    : 2026.11.06.0017
+    Updated    : 2026-11-06
 #>
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '', Justification='Per feedback_ps_wpf_handler_rules.md and PS51-WPF-001..003: flat-.ps1 GetNewClosure strips $script: scope. $global: survives closure scope-strip and keeps shared mutable state reachable from closure-captured handlers.')]
@@ -1416,8 +1416,8 @@ function Invoke-LoadTemplates {
     try {
         $opPath = Join-Path $PSScriptRoot 'Templates\operational-collections.json'
         $paPath = Join-Path $PSScriptRoot 'Templates\parameterized-templates.json'
-        $script:OperationalTemplates = @(Get-OperationalTemplates  -Path $opPath)
-        $script:ParameterizedTemplates = @(Get-ParameterizedTemplates -Path $paPath | ForEach-Object {
+        $script:OperationalTemplates = @(Get-OperationalTemplates -TemplatesPath $opPath)
+        $script:ParameterizedTemplates = @(Get-ParameterizedTemplates -TemplatesPath $paPath | ForEach-Object {
             $_ | Add-Member -MemberType NoteProperty -Name 'ParameterCount' -Value (@($_.Parameters).Count) -Force -PassThru
         })
         Add-LogLine ('Loaded {0} operational + {1} parameterized templates.' -f @($script:OperationalTemplates).Count, @($script:ParameterizedTemplates).Count)
@@ -2070,10 +2070,13 @@ function Show-EditMembershipDialog {
         $name = ([string]$txtAddDevice.Text).Trim()
         if (-not $name) { return }
         try {
-            Add-DirectMember -CollectionId $Collection.CollectionID -DeviceName $name
-            Add-LogLine ('Added "{0}" to {1}.' -f $name, $Collection.Name)
-            $txtAddDevice.Text = ''
-            & $reload
+            if (Add-DirectMember -CollectionId $Collection.CollectionID -DeviceName $name) {
+                Add-LogLine ('Added "{0}" to {1}.' -f $name, $Collection.Name)
+                $txtAddDevice.Text = ''
+                & $reload
+            } else {
+                Add-LogLine ('Add direct member: no device was added for "{0}". The name must match one device exactly. See the log for the reason.' -f $name)
+            }
         } catch {
             Add-LogLine ('Add direct member failed: {0}' -f $_.Exception.Message)
         }
@@ -2428,7 +2431,7 @@ $btnExportCsv.Add_Click({
     if (-not (Test-Path -LiteralPath $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null }
     $sfd.InitialDirectory = $reportsDir
     if ($sfd.ShowDialog() -eq $true) {
-        Export-CollectionCsv -Collections $info.Rows -OutputPath $sfd.FileName
+        Export-CollectionCsv -Collections @($info.Rows) -Columns $info.Columns -OutputPath $sfd.FileName
         Add-LogLine ('Exported CSV: {0}' -f $sfd.FileName)
     }
 })
@@ -2446,7 +2449,7 @@ $btnExportHtml.Add_Click({
     if (-not (Test-Path -LiteralPath $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null }
     $sfd.InitialDirectory = $reportsDir
     if ($sfd.ShowDialog() -eq $true) {
-        Export-CollectionHtml -Collections $info.Rows -OutputPath $sfd.FileName
+        Export-CollectionHtml -Collections @($info.Rows) -Columns $info.Columns -OutputPath $sfd.FileName
         Add-LogLine ('Exported HTML: {0}' -f $sfd.FileName)
     }
 })
