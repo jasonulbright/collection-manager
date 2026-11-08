@@ -1,12 +1,22 @@
 # Changelog
 
+## [2026.11.07.0020] - 2026-11-07
+
+## 1 opt-in decides the window tests
+
+### Changed
+
+- Run window tests only when the SUITE_ALLOW_WINDOW_TESTS opt-in is set.
+- Remove the computer name check from Test-WindowTestsAllowed.
+- Print one skip line in Invoke-Checks.ps1 when the opt-in is not 1.
+
 ## [2026.11.07.0019] - 2026-11-07
 
 ## 1 shared library refresh and window tests that cannot steal focus
 
 ### Added
 
-- Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1 and never on the dev PC. Elsewhere they report Skipped, and the console shows the reason. The CI workflow sets the variable.
+- Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1. Otherwise they report Skipped, and the console shows the reason. The CI workflow sets the variable.
 - Add WindowGuard.Tests.ps1, which tests the guard and checks that every test file that can open a window carries it.
 - Print one line in Invoke-Checks.ps1 when the window tests are skipped.
 

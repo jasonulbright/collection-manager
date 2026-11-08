@@ -1,8 +1,8 @@
 #Requires -Modules Pester
 # Tests of the window-test guard (Test-WindowTestsAllowed in WindowHarness.ps1).
-# The guard keeps window tests off the dev PC (removed) and runs them only when
-# SUITE_ALLOW_WINDOW_TESTS is 1. This file injects the computer name and the
-# opt-in value, so it never reads the real environment and never opens a window.
+# The guard runs window tests only when SUITE_ALLOW_WINDOW_TESTS is 1. This file
+# injects the opt-in value, so it never reads the real environment and never
+# opens a window.
 
 BeforeDiscovery {
     # Every other test file that can open a window must carry the guard.
@@ -14,48 +14,68 @@ BeforeDiscovery {
 
 BeforeAll {
     . "$PSScriptRoot\WindowHarness.ps1"
-    # Pass the computer name as a variable, so the linter rule against a hard-coded ComputerName stays quiet.
-    function Get-Guard { param([string]$Computer, $Value) Test-WindowTestsAllowed -ComputerName $Computer -OptIn $Value }
+    function Get-Guard { param($Value) Test-WindowTestsAllowed -OptIn $Value }
 }
 
 Describe 'Test-WindowTestsAllowed' {
-    It 'refuses on removed even with the opt-in' {
-        $r = Get-Guard 'removed' '1'
-        $r.Allowed | Should -BeFalse
-        $r.Reason | Should -Match 'removed'
-    }
-
-    It 'refuses on removed in lower case' {
-        (Get-Guard 'removed' '1').Allowed | Should -BeFalse
-    }
-
-    It 'refuses on removed without the opt-in' {
-        (Get-Guard 'removed' '').Allowed | Should -BeFalse
-    }
-
-    It 'allows another computer with the opt-in 1' {
-        $r = Get-Guard 'CM01' '1'
+    It 'allows when the opt-in is 1' {
+        $r = Get-Guard '1'
         $r.Allowed | Should -BeTrue
         $r.Reason | Should -BeNullOrEmpty
     }
 
-    It 'refuses another computer when the opt-in is <Label>, and names the opt-in' -ForEach @(
+    It 'refuses when the opt-in is <Label>, and names the opt-in' -ForEach @(
         @{ Label = 'empty'; Value = '' }
         @{ Label = 'null'; Value = $null }
         @{ Label = '0'; Value = '0' }
         @{ Label = 'true'; Value = 'true' }
     ) {
-        $r = Get-Guard 'CLIENT01' $Value
+        $r = Get-Guard $Value
         $r.Allowed | Should -BeFalse
-        $r.Reason | Should -Match 'SUITE_ALLOW_WINDOW_TESTS'
+        $r.Reason | Should -Be 'SUITE_ALLOW_WINDOW_TESTS is not 1'
+    }
+}
+
+Describe 'Test-WindowTestsAllowed decides on the opt-in only' {
+    It 'has no ComputerName parameter' {
+        (Get-Command Test-WindowTestsAllowed).Parameters.Keys | Should -Not -Contain 'ComputerName'
     }
 
-    It 'gives a reason whenever it refuses (<Name>, opt-in "<Value>")' -ForEach @(
-        @{ Name = 'removed'; Value = '1' }
-        @{ Name = 'CM01'; Value = '' }
-        @{ Name = 'CM01'; Value = '0' }
+    It 'allows when the opt-in is 1, whatever the machine' {
+        (Test-WindowTestsAllowed -OptIn '1').Allowed | Should -BeTrue
+    }
+}
+
+Describe 'Test-WindowTestsAllowed reads SUITE_ALLOW_WINDOW_TESTS when called without -OptIn' {
+    BeforeAll { $script:SavedOptIn = $env:SUITE_ALLOW_WINDOW_TESTS }
+    AfterAll {
+        if ($null -eq $script:SavedOptIn) { Remove-Item Env:\SUITE_ALLOW_WINDOW_TESTS -ErrorAction SilentlyContinue }
+        else { $env:SUITE_ALLOW_WINDOW_TESTS = $script:SavedOptIn }
+    }
+
+    It 'allows when the variable is 1' {
+        $env:SUITE_ALLOW_WINDOW_TESTS = '1'
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeTrue
+        $r.Reason | Should -BeNullOrEmpty
+    }
+
+    It 'refuses when the variable is <Label>' -ForEach @(
+        @{ Label = '0'; Value = '0' }
+        @{ Label = 'true'; Value = 'true' }
+        @{ Label = 'empty'; Value = '' }
     ) {
-        (Get-Guard $Name $Value).Reason | Should -Not -BeNullOrEmpty
+        $env:SUITE_ALLOW_WINDOW_TESTS = $Value
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeFalse
+        $r.Reason | Should -Be 'SUITE_ALLOW_WINDOW_TESTS is not 1'
+    }
+
+    It 'refuses when the variable is not set' {
+        Remove-Item Env:\SUITE_ALLOW_WINDOW_TESTS -ErrorAction SilentlyContinue
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeFalse
+        $r.Reason | Should -Be 'SUITE_ALLOW_WINDOW_TESTS is not 1'
     }
 }
 
@@ -97,14 +117,5 @@ Describe 'Get-WpfSession refuses where the guard says no' {
     It 'does not hand out a cached session' {
         $script:HarnessSession = [pscustomobject]@{ RunspaceStateInfo = [pscustomobject]@{ State = 'Opened' } }
         { Get-WpfSession } | Should -Throw '*not allowed*'
-    }
-}
-
-Describe 'Machine identity' {
-    It 'takes the computer name from the machine, not from the COMPUTERNAME variable' {
-        foreach ($f in 'WindowHarness.ps1', '..\Invoke-Checks.ps1') {
-            (Get-Content -LiteralPath (Join-Path $PSScriptRoot $f) -Raw) | Should -Not -Match '\$env:COMPUTERNAME'
-        }
-        (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'WindowHarness.ps1') -Raw) | Should -Match 'MachineName'
     }
 }
