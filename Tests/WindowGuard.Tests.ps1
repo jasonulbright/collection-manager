@@ -73,7 +73,9 @@ Describe 'Test-WindowTestsAllowed reads SUITE_ALLOW_WINDOW_TESTS when called wit
 
     It 'refuses when the variable is not set' {
         Remove-Item Env:\SUITE_ALLOW_WINDOW_TESTS -ErrorAction SilentlyContinue
-        (Test-WindowTestsAllowed).Allowed | Should -BeFalse
+        $r = Test-WindowTestsAllowed
+        $r.Allowed | Should -BeFalse
+        $r.Reason | Should -Be 'SUITE_ALLOW_WINDOW_TESTS is not 1'
     }
 }
 
