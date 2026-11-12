@@ -8,9 +8,11 @@
 - Show the Site Code and SMS Provider FQDN titles of the Options dialog in bold at 14 pt, in both themes. The value boxes keep the body style.
 - Show field labels and titles in bold. Use Title Case for the Rules in This Collection label, the Log Output label and the Parameters column.
 - Use one short sentence for each tooltip.
+- Use theme brushes only in the sidebar button styles. Set white text on selected list, tree and filter items and on the members grid of Edit Membership.
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Add ThemeGuard.Tests.ps1. It checks the white text on blue, the equal fonts in both themes, the bold titles, the shared button style and the banned words.
 - Add the -OutDir parameter to the capture tool. The tool now uses its own lab folder and its own task name, and it never deletes C:\guide.
 
@@ -34,6 +36,7 @@
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Add a guard for the window tests. They open a window only when SUITE_ALLOW_WINDOW_TESTS is 1. Otherwise they report Skipped, and the console shows the reason. The CI workflow sets the variable.
 - Add WindowGuard.Tests.ps1, which tests the guard and checks that every test file that can open a window carries it.
 - Print one line in Invoke-Checks.ps1 when the window tests are skipped.
@@ -53,6 +56,7 @@
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Add the user guide (docs/index.md) with images of the running window.
 - Add tools/guide-capture, one command that regenerates every image of the guide on a lab computer.
 
@@ -74,6 +78,7 @@
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Support -WhatIf and -Confirm in every function of the module that changes the site.
 - Export-CollectionCsv and Export-CollectionHtml accept -Collections and -Columns as well as -DataTable.
 
@@ -107,6 +112,7 @@
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Show a notice when a newer suite release is available; the launcher installs it.
 
 All notable changes to Collection Manager are documented in this
@@ -122,6 +128,7 @@ file.
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - Manage reusable site WQL queries from the WQL Editor: load, create, update, and delete saved queries, including their comments and query metadata.
 - Load a saved site query into the editor and add its WQL as a membership rule on the selected collection.
 
@@ -232,6 +239,7 @@ file.
 
 ### Added
 
+- Add the Light theme check page with the colors that the capture read from the screen, and its images.
 - **Configuration Manager clients**: Clients Version | 2409, 2503,
   2509 (build prefixes 5.00.9132 / 9135 / 9141).
 - **Servers**: Windows Server 2022 (build 20348) and Windows Server

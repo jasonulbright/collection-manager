@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Main window of Collection Manager, a tool that manages Configuration Manager device collections with an offline WQL editor.
 
@@ -1922,7 +1922,7 @@ function Show-CopyCollectionDialog {
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <TextBlock Text="Source" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBlock x:Name="txtSource" FontSize="13" FontWeight="Bold"/>
+            <TextBlock x:Name="txtSource" FontSize="13" FontWeight="SemiBold"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
             <TextBlock Text="New Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
@@ -2006,6 +2006,21 @@ function Show-EditMembershipDialog {
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
+            <Style x:Key="MemberRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource MahApps.Styles.DataGridRow}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="MemberCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource MahApps.Styles.DataGridCell}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16,12,16,12">
@@ -2015,13 +2030,14 @@ function Show-EditMembershipDialog {
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="txtCollName" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+        <TextBlock x:Name="txtCollName" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
         <DataGrid x:Name="gridMembers" Grid.Row="1" AutoGenerateColumns="False"
                   CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
                   SelectionMode="Extended" SelectionUnit="FullRow"
                   Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                   Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                  RowStyle="{StaticResource MemberRowStyle}" CellStyle="{StaticResource MemberCellStyle}"
                   RowHeaderWidth="0" BorderThickness="0" FontSize="11">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name"        Width="2*" Binding="{Binding Name}"/>
@@ -2169,7 +2185,7 @@ function Show-ApplyTemplateDialog {
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <TextBlock Text="Template" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBlock x:Name="txtTemplateName" FontSize="13" FontWeight="Bold"/>
+            <TextBlock x:Name="txtTemplateName" FontSize="13" FontWeight="SemiBold"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,12,0,0">
             <TextBlock Text="Target Collection" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
@@ -2195,7 +2211,7 @@ function Show-ApplyTemplateDialog {
             <TextBlock Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtRuleName" FontSize="12" Padding="6,4,6,4"/>
         </StackPanel>
-        <TextBlock Grid.Row="3" Text="Expanded WQL" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+        <TextBlock Grid.Row="3" Text="Expanded WQL" FontSize="11" FontWeight="Bold" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
         <TextBox x:Name="txtExpanded" Grid.Row="4" IsReadOnly="True"
                  AcceptsReturn="True" TextWrapping="NoWrap"
                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
@@ -2550,7 +2566,7 @@ function Show-OptionsDialog {
             <StackPanel x:Name="paneAbout" Visibility="Collapsed">
                 <TextBlock Text="About" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.2.1"
-                           FontSize="13" FontWeight="Bold"/>
+                           FontSize="13" FontWeight="SemiBold"/>
                 <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a 1-shot result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                 <TextBlock Text="157 ready-made operational queries plus 20 parameterized templates ship with the app."

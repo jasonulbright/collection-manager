@@ -96,35 +96,72 @@ Section 'light' {
   Toggle-El (Get-El $win 'toggleTheme'); Start-Sleep -Seconds 1
   foreach ($v in @(@('Collections', 'light-collections'), @('Templates', 'light-templates'))) { Invoke-El (Get-El $win ('btnView' + $v[0])); Start-Sleep -Seconds 2; Shot $win $v[1] }
   Invoke-El (Get-El $win 'btnOptions'); $d = Find-Last 'Options' 10; Shot $d 'light-options'; Focus-Win $d; Send-Keys '{ESC}'; Start-Sleep -Seconds 1
-  # Selected states in the light theme: every blue background must carry white text.
-  Invoke-El (Get-El $win 'btnViewCollections'); Start-Sleep -Seconds 1
-  Select-Row 'gridCollections' 'All Workstations' | Out-Null; Shot $win 'light-collection-selected'
-  Expand-El (Get-El $win 'cboCollectionFilter'); Start-Sleep -Milliseconds 500; Shot $win 'light-collections-filter-list' -Hover; Collapse-El (Get-El $win 'cboCollectionFilter')
-  Dlg 'btnNewCollection' 'light-dialog-new-collection'
-  Dlg 'btnCopyCollection' 'light-dialog-copy-collection'
-  Dlg 'btnEditMembership' 'light-dialog-edit-membership'
-  Select-Row 'gridCollections' 'All Workstations' | Out-Null
-  Invoke-El (Get-El $win 'btnRemoveColl'); Start-Sleep -Seconds 2
-  $no = Get-El $win 'No' -Quiet
-  Log ('before WQL: ' + (WinNames))
-  if ($no) { Shot $win 'light-dialog-remove-collection'; Invoke-El $no; Start-Sleep -Seconds 2 } else { Log 'no confirmation in light'; Send-Keys '{ESC}'; Start-Sleep -Seconds 1 }
-  Start-Sleep -Seconds 2; Log ('windows: ' + (WinNames))
-  Invoke-El (Get-El $win 'btnViewWqlEditor'); Start-Sleep -Seconds 2
-  Tab 'Collections'
-  $c = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::TreeItem)
-  $it = @((Get-El $win 'treeWqlCollections').FindAll('Descendants', $c)) | Where-Object { $_.Current.Name -like '*All Workstations*' } | Select-Object -First 1
-  if ($it) { Select-El $it; Start-Sleep -Seconds 2 }
-  $l = (Get-El $win 'lstWqlRules').FindFirst('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)))
-  if ($l) { Select-El $l; Start-Sleep -Seconds 1 }
-  Shot $win 'light-wql-selected'
-  Tab 'Site Queries'; Invoke-El (Get-El $win 'btnRefreshSavedQueries'); Start-Sleep -Seconds 5
-  $r = Rows 'gridSavedQueries'; if ($r.Count) { Select-El $r[0]; Start-Sleep -Seconds 1 }; Shot $win 'light-site-query-selected'
-  Tab 'Collections'
-  Invoke-El (Get-El $win 'btnViewTemplates'); Start-Sleep -Seconds 2
-  Tab 'Operational'
-  $r = Rows 'gridOperationalTemplates'; Select-El $r[0]; Start-Sleep -Seconds 1; Shot $win 'light-template-selected'
-  Toggle-El (Get-El $win 'toggleTheme')
 }
+# Evidence for the light theme: every blue background must carry white text, also when the pointer is over a
+# control, when the button is down and when the control is disabled. A step that fails logs WARN and goes on.
+function OpenDlg([string]$Button, [string]$Title) { Invoke-El (Get-El $win $Button); Start-Sleep -Seconds 2; Find-Last $Title 10 }
+function CloseDlg($d) { Focus-Win $d; Send-Keys '{ESC}'; Start-Sleep -Seconds 1 }
+function Sample-States($El, [string]$Name, $Scope) {
+  Sample-El $El ($Name + ' normal')
+  Move-To $El; Start-Sleep -Milliseconds 700; Sample-El $El ($Name + ' hover'); Shot $Scope ('light-state-' + $Name + '-hover') -Hover
+  Hold-Press $El; Sample-El $El ($Name + ' pressed'); Shot $Scope ('light-state-' + $Name + '-pressed') -Hover; Release-Press
+}
+Section 'light states' {
+  Extra 'collections' {
+    Invoke-El (Get-El $win 'btnViewCollections'); Start-Sleep -Seconds 1
+    if (Select-Row 'gridCollections' 'All Workstations') {
+      Shot $win 'light-collection-selected'; Sample-El (Find-Row 'gridCollections' 'All Workstations') 'grid selected row'
+    }
+    Sample-States (Get-El $win 'btnExportCsv') 'inline-button' $win
+    Sample-El (Get-El $win 'btnViewCollections') 'sidebar active'
+    Sample-El (Get-El $win 'btnOptions') 'sidebar options'
+    Sample-El (Find-Role $win 'TabItem' 'Properties') 'selected tab'
+    Expand-El (Get-El $win 'cboCollectionFilter'); Start-Sleep -Milliseconds 500
+    $item = Find-Role $win 'ListItem' 'All'; if ($item) { Sample-El $item 'combo selected item' }
+    Shot $win 'light-collections-filter-list' -Hover; Collapse-El (Get-El $win 'cboCollectionFilter')
+  }
+  Extra 'new dialog' {
+    $d = OpenDlg 'btnNewCollection' 'New Collection'; Shot $d 'light-dialog-new-collection'
+    Sample-States (Get-El $d 'btnCancel') 'dialog-button' $d
+    Sample-El (Get-El $d 'btnOk') 'dialog-accent-button'
+    CloseDlg $d
+  }
+  Extra 'copy dialog' { $d = OpenDlg 'btnCopyCollection' 'Copy Collection'; Shot $d 'light-dialog-copy-collection'; CloseDlg $d }
+  Extra 'membership dialog' {
+    $d = OpenDlg 'btnEditMembership' 'Edit Membership'; Start-Sleep -Seconds 2
+    $row = @((Get-El $d 'gridMembers').FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem)))) | Select-Object -First 1
+    if ($row) { Select-El $row; Start-Sleep -Milliseconds 600; Sample-El $row 'members grid selected row' } else { Log 'WARN extra membership dialog: no member row' }
+    Shot $d 'light-dialog-edit-membership'; CloseDlg $d
+  }
+  Extra 'remove confirmation' {
+    Select-Row 'gridCollections' 'All Workstations' | Out-Null
+    Invoke-El (Get-El $win 'btnRemoveColl'); Start-Sleep -Seconds 2
+    $no = Get-El $win 'No' -Quiet
+    if ($no) { Shot $win 'light-dialog-remove-collection'; Invoke-El $no; Start-Sleep -Seconds 2 } else { Log 'WARN extra remove confirmation: the confirmation did not show'; Send-Keys '{ESC}'; Start-Sleep -Seconds 1 }
+  }
+  Extra 'wql' {
+    Invoke-El (Get-El $win 'btnViewWqlEditor'); Start-Sleep -Seconds 2; Tab 'Collections'
+    $tree = Get-El $win 'treeWqlCollections' -Quiet
+    $it = $null
+    if ($tree) { $it = @($tree.FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::TreeItem)))) | Where-Object { $_.Current.Name -like '*All Workstations*' } | Select-Object -First 1 }
+    if ($it) { Select-El $it; Start-Sleep -Seconds 2; Sample-El $it 'collection tree selected item' } else { Log 'WARN extra wql: no tree item' }
+    $lst = Get-El $win 'lstWqlRules' -Quiet
+    $l = $null
+    if ($lst) { $l = $lst.FindFirst('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem))) }
+    if ($l) { Select-El $l; Start-Sleep -Seconds 1; Sample-El $l 'rule list selected item' } else { Log 'WARN extra wql: no rule item' }
+    Shot $win 'light-wql-selected'
+    Tab 'Site Queries'; Invoke-El (Get-El $win 'btnRefreshSavedQueries'); Start-Sleep -Seconds 5
+    $r = @(Rows 'gridSavedQueries'); if ($r.Count) { Select-El $r[0]; Start-Sleep -Seconds 1; Sample-El $r[0] 'saved query selected row' } else { Log 'WARN extra wql: no saved query' }
+    Shot $win 'light-site-query-selected'; Tab 'Collections'
+  }
+  Extra 'templates' {
+    Invoke-El (Get-El $win 'btnViewTemplates'); Start-Sleep -Seconds 2; Tab 'Operational'
+    $b = Get-El $win 'btnCopyToWqlEditor' -Quiet
+    if ($b -and -not $b.Current.IsEnabled) { Sample-El $b 'inline-button disabled'; Shot $win 'light-state-inline-button-disabled' }
+    $r = @(Rows 'gridOperationalTemplates'); if ($r.Count) { Select-El $r[0]; Start-Sleep -Seconds 1; Sample-El $r[0] 'template selected row'; Shot $win 'light-template-selected' } else { Log 'WARN extra templates: no template row' }
+  }
+}
+Section 'dark again' { Toggle-El (Get-El $win 'toggleTheme') }
 Section 'persist' { Invoke-El (Get-El $win 'btnViewTemplates'); Start-Sleep -Milliseconds 600; Invoke-El (Get-El $win 'Close'); Start-Sleep -Seconds 8; $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'; Shot $win 'start-reopen' }
 Section 'files' {
   New-Item -ItemType Directory "$OutDir\files" -Force | Out-Null

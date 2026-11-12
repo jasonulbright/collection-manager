@@ -36,7 +36,7 @@
                     <Trigger Property="IsPressed" Value="True">
                         <Setter TargetName="Bd" Property="Background">
                             <Setter.Value>
-                                <SolidColorBrush Color="#3A3A3A"/>
+                                <SolidColorBrush Color="{DynamicResource MahApps.Colors.AccentBase}"/>
                             </Setter.Value>
                         </Setter>
                     </Trigger>
@@ -55,13 +55,9 @@
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="Background">
-                    <Setter.Value><SolidColorBrush Color="#1E1E1E"/></Setter.Value>
-                </Setter>
-                <Setter Property="BorderBrush">
-                    <Setter.Value><SolidColorBrush Color="#555555"/></Setter.Value>
-                </Setter>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </Style>
 
@@ -74,14 +70,36 @@
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="FontWeight" Value="Bold"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="Background">
-                    <Setter.Value><SolidColorBrush Color="#1E1E1E"/></Setter.Value>
-                </Setter>
-                <Setter Property="BorderBrush">
-                    <Setter.Value><SolidColorBrush Color="#555555"/></Setter.Value>
-                </Setter>
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent}"/>
                 <Setter Property="BorderThickness" Value="1"/>
+            </Style>
+
+            <!-- Selected and highlighted items: white text on the accent blue, in both themes. -->
+            <Style TargetType="ListBoxItem" BasedOn="{StaticResource MahApps.Styles.ListBoxItem}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="TreeViewItem" BasedOn="{StaticResource MahApps.Styles.TreeViewItem}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="ComboBoxItem" BasedOn="{StaticResource MahApps.Styles.ComboBoxItem}">
+                <Style.Triggers>
+                    <Trigger Property="IsHighlighted" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
@@ -361,7 +379,7 @@
                                 <Button x:Name="btnEditMembership" Content="Edit Membership..." Style="{StaticResource SquareInlineButtonStyle}" MinWidth="150"
                                         ToolTip="Edit direct members and include and exclude rules."/>
                                 <Button x:Name="btnEvaluateColl"   Content="Evaluate"         Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
-                                        ToolTip="Start a membership update for the selected collection."/>
+                                        ToolTip="Evaluate the membership of the selected collection."/>
                                 <Button x:Name="btnRemoveColl"     Content="Remove..."        Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
                                         ToolTip="Delete the selected collection"/>
                             </StackPanel>
@@ -506,10 +524,10 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="txtSavedQueryTargetClass" Grid.Column="0" FontSize="11" Padding="6,4,6,4" Margin="0,0,4,0"
-                                             ToolTip="Target class shown by Configuration Manager; optional"
+                                             ToolTip="Set the target class of the query."
                                              Controls:TextBoxHelper.Watermark="Target class (optional)"/>
                                     <TextBox x:Name="txtSavedQueryLimitId" Grid.Column="1" FontSize="11" Padding="6,4,6,4" Margin="4,0,0,0"
-                                             ToolTip="Collection ID or &lt;Prompt&gt;; leave blank for no limit"
+                                             ToolTip="Set the limiting collection ID or &lt;Prompt&gt;."
                                              Controls:TextBoxHelper.Watermark="Limit ID or &lt;Prompt&gt;"/>
                                 </Grid>
                                 <WrapPanel Grid.Row="5" Margin="0,0,0,4">
@@ -621,7 +639,7 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Category" Width="120" Binding="{Binding Category}"/>
                                     <DataGridTextColumn Header="Name"     Width="*"   Binding="{Binding Name}"/>
-                                    <DataGridTextColumn Header="Parameters"   Width="60"  Binding="{Binding ParameterCount}"/>
+                                    <DataGridTextColumn Header="Parameters" Width="100" Binding="{Binding ParameterCount}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>

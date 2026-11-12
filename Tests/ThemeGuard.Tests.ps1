@@ -1,4 +1,4 @@
-#Requires -Modules Pester
+#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '5.1.0' }
 # Guard tests for the light and dark themes. They parse the files. They create no
 # WPF control and open no window, so they run on Windows PowerShell 5.1 and on PowerShell 7.
 #   a. A blue background always comes with a white foreground.
@@ -105,6 +105,45 @@ BeforeAll {
         , $found.ToArray()
     }
 
+    # Lists every color literal in the Setters and attributes of the nodes. Only a DynamicResource or a TemplateBinding is allowed.
+    function Get-HardColor {
+        param($Nodes, [string]$Label)
+        $brushProps = 'Background|Foreground|BorderBrush|Fill|Stroke|OpacityMask'
+        foreach ($n in $Nodes) {
+            foreach ($setter in @($n.SelectNodes('descendant-or-self::*[local-name()="Setter"]'))) {
+                if ($setter.GetAttribute('Property') -notmatch ('^(' + $brushProps + ')$')) { continue }
+                $v = $setter.GetAttribute('Value')
+                if ($v) { if ($v -notmatch '^\{(DynamicResource|TemplateBinding)\b') { '{0}: Setter {1}="{2}"' -f $Label, $setter.GetAttribute('Property'), $v } }
+                else {
+                    foreach ($c in @($setter.SelectNodes('descendant::*[@Color]'))) {
+                        if ($c.GetAttribute('Color') -notmatch '^\{DynamicResource\b') { '{0}: Setter {1} holds the color {2}' -f $Label, $setter.GetAttribute('Property'), $c.GetAttribute('Color') }
+                    }
+                }
+            }
+            foreach ($el in @($n.SelectNodes('descendant-or-self::*[not(local-name()="Setter")]'))) {
+                foreach ($attr in @($el.Attributes)) {
+                    if ($attr.LocalName -match ('^(' + $brushProps + ')$') -and $attr.Value -notmatch '^\{(DynamicResource|TemplateBinding)\b') { '{0}: {1} {2}="{3}"' -f $Label, $el.LocalName, $attr.LocalName, $attr.Value }
+                }
+            }
+        }
+    }
+
+    # Compares the font assignments of the dark and the light branch of every theme if-statement.
+    function Get-ThemeFontDifference {
+        param($Ast)
+        $fontPattern = '\.(FontSize|FontWeight|FontStyle|FontFamily|TextDecorations)\s*='
+        $themeIf = @($Ast.FindAll({ param($n)
+                    $n -is [System.Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text -match 'IsDark|isDark|DarkMode|IsOn'
+                }, $true))
+        $diff = foreach ($if in $themeIf) {
+            $thenText = $if.Clauses[0].Item2.Extent.Text
+            $elseText = if ($if.ElseClause) { $if.ElseClause.Extent.Text } else { '' }
+            $thenFonts = @([regex]::Matches($thenText, $fontPattern + '[^\r\n]*') | ForEach-Object { $_.Value.Trim() } | Sort-Object)
+            $elseFonts = @([regex]::Matches($elseText, $fontPattern + '[^\r\n]*') | ForEach-Object { $_.Value.Trim() } | Sort-Object)
+            if (($thenFonts -join "`n") -ne ($elseFonts -join "`n")) { 'line {0}: font assignments differ' -f $if.Extent.StartLineNumber }
+        }
+        [pscustomobject]@{ Inspected = $themeIf.Count; Differences = @($diff) }
+    }
     function Get-ScriptAst {
         param([string]$Path)
         $tokens = $null; $errors = $null
@@ -130,15 +169,38 @@ Describe 'Blue backgrounds carry white text' {
         $r[0] | Should -Match 'Bad'
     }
 
-    It 'sets white text on the accent selection of every grid row' {
-        $x = (Get-XamlDocument -Name 'MainWindow.xaml')[0].Xml
-        $row = Select-XamlNode $x.DocumentElement 'Style' | Where-Object { $_.GetAttribute('Key', 'http://schemas.microsoft.com/winfx/2006/xaml') -eq 'ViewDataGridRow' }
-        $row | Should -Not -BeNullOrEmpty
-        $cell = Select-XamlNode $x.DocumentElement 'Style' | Where-Object { $_.GetAttribute('Key', 'http://schemas.microsoft.com/winfx/2006/xaml') -eq 'GridCellStyle' }
-        $cell.InnerXml | Should -Match 'IsSelected'
-        $cell.InnerXml | Should -Match 'Foreground'
+    It 'sets white text on the selected state of <Target> in <Source>' -ForEach @(
+        @{ Source = 'MainWindow.xaml'; Target = 'ViewDataGridRow'; Kind = 'key'; Property = 'IsSelected' }
+        @{ Source = 'MainWindow.xaml'; Target = 'GridCellStyle'; Kind = 'key'; Property = 'IsSelected' }
+        @{ Source = 'MainWindow.xaml'; Target = 'ListBoxItem'; Kind = 'type'; Property = 'IsSelected' }
+        @{ Source = 'MainWindow.xaml'; Target = 'TreeViewItem'; Kind = 'type'; Property = 'IsSelected' }
+        @{ Source = 'MainWindow.xaml'; Target = 'ComboBoxItem'; Kind = 'type'; Property = 'IsHighlighted' }
+        @{ Source = 'start-collectionmanager.ps1'; Target = 'MemberRowStyle'; Kind = 'key'; Property = 'IsSelected' }
+        @{ Source = 'start-collectionmanager.ps1'; Target = 'MemberCellStyle'; Kind = 'key'; Property = 'IsSelected' }
+    ) {
+        $styles = foreach ($doc in @(Get-XamlDocument -Name $Source)) {
+            Select-XamlNode $doc.Xml.DocumentElement 'Style' | Where-Object {
+                if ($Kind -eq 'key') { $_.GetAttribute('Key', 'http://schemas.microsoft.com/winfx/2006/xaml') -eq $Target }
+                else { $_.GetAttribute('TargetType') -eq $Target -and -not $_.GetAttribute('Key', 'http://schemas.microsoft.com/winfx/2006/xaml') }
+            }
+        }
+        @($styles).Count | Should -BeGreaterThan 0
+        foreach ($style in $styles) {
+            $trigger = @($style.SelectNodes('*[local-name()="Style.Triggers"]/*[local-name()="Trigger"]') | Where-Object { $_.GetAttribute('Property') -eq $Property })
+            $trigger.Count | Should -BeGreaterThan 0
+            $fg = @($trigger[0].SelectNodes('*[local-name()="Setter"]') | Where-Object { $_.GetAttribute('Property') -eq 'Foreground' })
+            $fg.Count | Should -Be 1
+            Test-WhiteBrush (Get-SetterValue $fg[0]) | Should -BeTrue
+        }
     }
 
+    It 'treats a white foreground as white and a black one as not white (the check itself)' {
+        Test-WhiteBrush '{DynamicResource MahApps.Brushes.IdealForeground}' | Should -BeTrue
+        Test-WhiteBrush 'White' | Should -BeTrue
+        Test-WhiteBrush '#FFFFFF' | Should -BeTrue
+        Test-WhiteBrush '{DynamicResource MahApps.Brushes.ThemeForeground}' | Should -BeFalse
+        Test-WhiteBrush 'Black' | Should -BeFalse
+    }
     It 'vendors a SuiteCommon that paints white text on blue buttons' {
         $text = [IO.File]::ReadAllText((Join-Path $script:Root 'Lib\SuiteCommon\SuiteCommon.psm1'))
         $text | Should -Match 'OnBlue\s*=\s*\$bc\.ConvertFrom\(''#FFFFFF''\)'
@@ -216,16 +278,21 @@ Describe 'Every button takes a shared themed style' {
         @($problems) | Should -BeNullOrEmpty
     }
 
-    It 'sets no hard-coded Background, Foreground or BorderBrush on a Button' -ForEach $script:XamlSourceNames {
+    It 'sets no hard-coded color on a Button, a button Style or a button template in <_>' -ForEach $script:XamlSourceNames {
         $problems = foreach ($doc in @(Get-XamlDocument -Name $_)) {
-            foreach ($b in (Select-XamlNode $doc.Xml.DocumentElement 'Button')) {
-                foreach ($attr in 'Background', 'Foreground', 'BorderBrush') {
-                    $v = $b.GetAttribute($attr)
-                    if ($v -and $v -notmatch 'DynamicResource') { '{0}: button {1} sets {2}="{3}"' -f $doc.Label, $b.GetAttribute('Name', 'http://schemas.microsoft.com/winfx/2006/xaml'), $attr, $v }
-                }
-            }
+            $root = $doc.Xml.DocumentElement
+            $nodes = @(Select-XamlNode $root 'Button')
+            $nodes += @($root.SelectNodes('//*[local-name()="Style"][contains(@TargetType,"Button")]'))
+            $nodes += @($root.SelectNodes('//*[local-name()="ControlTemplate"][contains(@TargetType,"Button")]'))
+            Get-HardColor -Nodes $nodes -Label $doc.Label
         }
         @($problems) | Should -BeNullOrEmpty
+    }
+
+    It 'finds the button styles and templates that it scans (the scan is not empty)' {
+        $doc = (Get-XamlDocument -Name 'MainWindow.xaml')[0]
+        @($doc.Xml.SelectNodes('//*[local-name()="Style"][contains(@TargetType,"Button")]')).Count | Should -BeGreaterThan 2
+        @($doc.Xml.SelectNodes('//*[local-name()="ControlTemplate"][contains(@TargetType,"Button")]')).Count | Should -BeGreaterThan 0
     }
 
     It 'detects a button without a style (the check itself)' {
@@ -234,22 +301,34 @@ Describe 'Every button takes a shared themed style' {
         $b = Select-XamlNode $x.DocumentElement 'Button'
         $b.GetAttribute('Style') | Should -BeNullOrEmpty
     }
+
+    It 'detects hard-coded colors in a button style, a template and an attribute (the check itself)' {
+        $x = New-Object System.Xml.XmlDocument
+        $x.LoadXml('<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Style x:Key="S" TargetType="Button"><Setter Property="Foreground" Value="White"/><Setter Property="Background"><Setter.Value><SolidColorBrush Color="#1E1E1E"/></Setter.Value></Setter><Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Accent}"/></Style><ControlTemplate x:Key="T" TargetType="Button"><Border BorderBrush="#555555"/></ControlTemplate></ResourceDictionary>')
+        $nodes = @($x.SelectNodes('//*[local-name()="Style" or local-name()="ControlTemplate"]'))
+        $found = @(Get-HardColor -Nodes $nodes -Label 'sample')
+        $found.Count | Should -Be 3
+        ($found -join ' ') | Should -Match 'White'
+        ($found -join ' ') | Should -Match '#1E1E1E'
+        ($found -join ' ') | Should -Match '#555555'
+    }
 }
+
 Describe 'Light and dark differ in colors only' {
     It 'sets no font property differently in the dark and the light branch of <_>' -ForEach @('start-collectionmanager.ps1', 'Lib\SuiteCommon\SuiteCommon.psm1') {
-        $ast = Get-ScriptAst -Path (Join-Path $script:Root $_)
-        $fontPattern = '\.(FontSize|FontWeight|FontStyle|FontFamily|TextDecorations)\s*='
-        $themeIf = $ast.FindAll({ param($n)
-                $n -is [System.Management.Automation.Language.IfStatementAst] -and $n.Clauses[0].Item1.Extent.Text -match 'IsDark|isDark|DarkMode|IsOn'
-            }, $true)
-        $bad = foreach ($if in $themeIf) {
-            $thenText = $if.Clauses[0].Item2.Extent.Text
-            $elseText = if ($if.ElseClause) { $if.ElseClause.Extent.Text } else { '' }
-            $thenFonts = @([regex]::Matches($thenText, $fontPattern + '[^\r\n]*') | ForEach-Object { $_.Value.Trim() } | Sort-Object)
-            $elseFonts = @([regex]::Matches($elseText, $fontPattern + '[^\r\n]*') | ForEach-Object { $_.Value.Trim() } | Sort-Object)
-            if (($thenFonts -join "`n") -ne ($elseFonts -join "`n")) { 'line {0}: font assignments differ' -f $if.Extent.StartLineNumber }
-        }
-        @($bad) | Should -BeNullOrEmpty
+        $r = Get-ThemeFontDifference -Ast (Get-ScriptAst -Path (Join-Path $script:Root $_))
+        $r.Inspected | Should -BeGreaterThan 0
+        $r.Differences | Should -BeNullOrEmpty
+    }
+
+    It 'detects a font that only one theme branch sets (the check itself)' {
+        $src = 'if ($isDark) { $b.Background = 1; $b.FontWeight = 2 } else { $b.Background = 3 }'
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
+        $r = Get-ThemeFontDifference -Ast $ast
+        $r.Inspected | Should -Be 1
+        @($r.Differences).Count | Should -Be 1
+        $same = [System.Management.Automation.Language.Parser]::ParseInput('if ($isDark) { $b.Background = 1; $b.FontWeight = 2 } else { $b.Background = 3; $b.FontWeight = 2 }', [ref]$null, [ref]$null)
+        @((Get-ThemeFontDifference -Ast $same).Differences).Count | Should -Be 0
     }
 
     It 'binds no font setter in <_> to the theme' -ForEach $script:XamlSourceNames {
@@ -264,15 +343,13 @@ Describe 'Light and dark differ in colors only' {
         @($problems) | Should -BeNullOrEmpty
     }
 
-    It 'keeps FontSize, FontWeight, FontStyle and TextDecorations out of the light and dark theme dictionaries' {
-        $themeFiles = @(Get-ChildItem -LiteralPath $script:Root -Recurse -File -Include '*.xaml' | Where-Object { $_.FullName -notlike '*\Tests\*' -and $_.Name -match 'Dark|Light' })
-        $problems = foreach ($f in $themeFiles) {
-            if ([IO.File]::ReadAllText($f.FullName) -match 'Font(Size|Weight|Style)|TextDecorations') { $f.Name }
-        }
-        @($problems) | Should -BeNullOrEmpty
+    It 'keeps font properties out of the theme palette of the vendored SuiteCommon' {
+        $text = [IO.File]::ReadAllText((Join-Path $script:Root 'Lib\SuiteCommon\SuiteCommon.psm1'))
+        $m = [regex]::Match($text, '(?s)\$bc = .*?OnBlue\s*=[^\r\n]*')
+        $m.Success | Should -BeTrue
+        $m.Value | Should -Not -Match 'Font(Size|Weight|Style|Family)|TextDecorations'
     }
 }
-
 Describe 'Banned words' {
     BeforeAll {
         $script:Banned = '\b(easily|simply|seamless(ly)?|powerful|robust|streamline[ds]?|quickly|just|effortless(ly)?|intuitive(ly)?|handy)\b|helps you|allows you to'

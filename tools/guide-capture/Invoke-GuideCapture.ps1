@@ -109,7 +109,12 @@ try {
         Get-Content $log | Where-Object { $_ -match '^\d\d:\d\d:\d\d\s+ERROR' } | ForEach-Object { Write-Warning $_; $failed.Add($_) }
     }
     # A failed step stops the capture before any guide image is replaced.
-    if ($failed.Count -and $OutDir) { New-Item -ItemType Directory $OutDir -Force | Out-Null; Copy-Item (Join-Path $tmp '*') $OutDir -Recurse -Force }
+    # -OutDir receives every captured image and every run log, also when a step failed.
+    if ($OutDir) {
+        New-Item -ItemType Directory $OutDir -Force | Out-Null
+        foreach ($png in @(Get-ChildItem $tmp -Recurse -Filter *.png)) { Copy-Item $png.FullName (Join-Path $OutDir $png.Name) -Force }
+        foreach ($runLog in @(Get-ChildItem $tmp -Recurse -Filter run.log)) { Copy-Item $runLog.FullName (Join-Path $OutDir ($runLog.Directory.Name + '.run.log')) -Force }
+    }
     if ($failed.Count) { throw ("The capture failed. No image was replaced.`n" + ($failed -join "`n")) }
     $captured = @(Get-ChildItem $tmp -Recurse -Filter *.png)
     $capturedNames = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
@@ -118,10 +123,6 @@ try {
     if ($duplicate.Count) { throw ("Two runs produced the same image. No image was replaced.`n" + ($duplicate -join "`n")) }
     $missing = @(Get-ChildItem $images -Filter *.png | Where-Object { -not $capturedNames.Contains($_.Name) } | ForEach-Object { $_.Name })
     if ($missing.Count) { throw ("The capture did not produce these guide images. No image was replaced.`n" + ($missing -join "`n")) }
-    if ($OutDir) {
-        New-Item -ItemType Directory $OutDir -Force | Out-Null
-        foreach ($png in $captured) { Copy-Item $png.FullName (Join-Path $OutDir $png.Name) -Force }
-    }
     foreach ($png in $captured) {
         if ($AddNew -or (Test-Path (Join-Path $images $png.Name))) { Copy-Item $png.FullName (Join-Path $images $png.Name) -Force }
     }

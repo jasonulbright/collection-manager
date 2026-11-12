@@ -23,6 +23,7 @@ Collection Manager manages Configuration Manager device collections and their WQ
 - [Error messages](reference/error-messages.md): message, cause and fix.
 - [Glossary](reference/glossary.md): the terms of the tool.
 - [Capture the images again](reference/capture-images.md): the one command that regenerates the images of this guide.
+- [Light theme check](reference/light-theme-check.md): the light theme states, with the colors read from the screen.
 
 ## External references
 
