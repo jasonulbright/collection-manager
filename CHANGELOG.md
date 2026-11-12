@@ -1,24 +1,28 @@
 # Changelog
 
-## [Unreleased]
+## [2026.11.12.0021] - 2026-11-12
+
+## 0 blue buttons with unreadable text in the light theme
 
 ### Fixed
 
-- Show white text on every blue background in the light theme: selected grid rows and the buttons of the dialogs.
-- Show the Site Code and SMS Provider FQDN titles of the Options dialog in bold at 14 pt, in both themes. The value boxes keep the body style.
-- Show field labels and titles in bold. Use Title Case for the Rules in This Collection label, the Log Output label and the Parameters column.
+- Show white text on blue buttons in the light theme.
+- Show white text on selected grid rows and selected list, tree and filter items.
+- Show the field titles in bold 14 pt. The values keep the normal style.
+- Raise the dark theme button border contrast to 3:1.
 - Use one short sentence for each tooltip.
-- Use theme brushes only in the sidebar button styles. Set white text on selected list, tree and filter items and on the members grid of Edit Membership.
-
-### Added
-
-- Add the Light theme check page with the colors that the capture read from the screen, and its images.
-- Add ThemeGuard.Tests.ps1. It checks the white text on blue, the equal fonts in both themes, the bold titles, the shared button style and the banned words.
-- Add the -OutDir parameter to the capture tool. The tool now uses its own lab folder and its own task name, and it never deletes C:\guide.
 
 ### Changed
 
+- Use one themed style for all buttons and selected states.
+- Take the retaken guide images in both themes.
 - Refresh the vendored SuiteCommon library to release 2026.11.11.0080.
+
+### Added
+
+- Add guard tests for the white text on blue, the equal fonts in both themes, the bold titles, the shared button style and the state contrast pairs.
+- Add the Light theme check page and its images.
+- Add the -OutDir parameter to the capture tool.
 
 ## [2026.11.07.0020] - 2026-11-07
 
