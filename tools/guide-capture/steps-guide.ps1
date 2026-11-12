@@ -96,11 +96,38 @@ Section 'light' {
   Toggle-El (Get-El $win 'toggleTheme'); Start-Sleep -Seconds 1
   foreach ($v in @(@('Collections', 'light-collections'), @('Templates', 'light-templates'))) { Invoke-El (Get-El $win ('btnView' + $v[0])); Start-Sleep -Seconds 2; Shot $win $v[1] }
   Invoke-El (Get-El $win 'btnOptions'); $d = Find-Last 'Options' 10; Shot $d 'light-options'; Focus-Win $d; Send-Keys '{ESC}'; Start-Sleep -Seconds 1
+  # Selected states in the light theme: every blue background must carry white text.
+  Invoke-El (Get-El $win 'btnViewCollections'); Start-Sleep -Seconds 1
+  Select-Row 'gridCollections' 'All Workstations' | Out-Null; Shot $win 'light-collection-selected'
+  Expand-El (Get-El $win 'cboCollectionFilter'); Start-Sleep -Milliseconds 500; Shot $win 'light-collections-filter-list' -Hover; Collapse-El (Get-El $win 'cboCollectionFilter')
+  Dlg 'btnNewCollection' 'light-dialog-new-collection'
+  Dlg 'btnCopyCollection' 'light-dialog-copy-collection'
+  Dlg 'btnEditMembership' 'light-dialog-edit-membership'
+  Select-Row 'gridCollections' 'All Workstations' | Out-Null
+  Invoke-El (Get-El $win 'btnRemoveColl'); Start-Sleep -Seconds 2
+  $no = Get-El $win 'No' -Quiet
+  Log ('before WQL: ' + (WinNames))
+  if ($no) { Shot $win 'light-dialog-remove-collection'; Invoke-El $no; Start-Sleep -Seconds 2 } else { Log 'no confirmation in light'; Send-Keys '{ESC}'; Start-Sleep -Seconds 1 }
+  Start-Sleep -Seconds 2; Log ('windows: ' + (WinNames))
+  Invoke-El (Get-El $win 'btnViewWqlEditor'); Start-Sleep -Seconds 2
+  Tab 'Collections'
+  $c = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::TreeItem)
+  $it = @((Get-El $win 'treeWqlCollections').FindAll('Descendants', $c)) | Where-Object { $_.Current.Name -like '*All Workstations*' } | Select-Object -First 1
+  if ($it) { Select-El $it; Start-Sleep -Seconds 2 }
+  $l = (Get-El $win 'lstWqlRules').FindFirst('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)))
+  if ($l) { Select-El $l; Start-Sleep -Seconds 1 }
+  Shot $win 'light-wql-selected'
+  Tab 'Site Queries'; Invoke-El (Get-El $win 'btnRefreshSavedQueries'); Start-Sleep -Seconds 5
+  $r = Rows 'gridSavedQueries'; if ($r.Count) { Select-El $r[0]; Start-Sleep -Seconds 1 }; Shot $win 'light-site-query-selected'
+  Tab 'Collections'
+  Invoke-El (Get-El $win 'btnViewTemplates'); Start-Sleep -Seconds 2
+  Tab 'Operational'
+  $r = Rows 'gridOperationalTemplates'; Select-El $r[0]; Start-Sleep -Seconds 1; Shot $win 'light-template-selected'
   Toggle-El (Get-El $win 'toggleTheme')
 }
 Section 'persist' { Invoke-El (Get-El $win 'btnViewTemplates'); Start-Sleep -Milliseconds 600; Invoke-El (Get-El $win 'Close'); Start-Sleep -Seconds 8; $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'; Shot $win 'start-reopen' }
 Section 'files' {
   New-Item -ItemType Directory "$OutDir\files" -Force | Out-Null
-  Get-ChildItem $appDir -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notlike '*\Lib\*' -and $_.FullName -notlike '*\Module\*' -and $_.FullName -notlike '*\Catalog\*' -and $_.FullName -notlike '*\Templates\*' -and $_.Extension -in '.json', '.log', '.csv', '.html', '.txt' } | ForEach-Object { Log ('file: ' + $_.FullName.Substring($appDir.Length) + ' ' + $_.Length); Copy-Item $_.FullName ("$OutDir\files\" + $_.Name) -Force }
+  Get-ChildItem $appDir -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notlike '*\ui\*' -and $_.FullName -notlike '*\Lib\*' -and $_.FullName -notlike '*\Module\*' -and $_.FullName -notlike '*\Catalog\*' -and $_.FullName -notlike '*\Templates\*' -and $_.Extension -in '.json', '.log', '.csv', '.html', '.txt' } | ForEach-Object { Log ('file: ' + $_.FullName.Substring($appDir.Length) + ' ' + $_.Length); Copy-Item $_.FullName ("$OutDir\files\" + $_.Name) -Force }
 }
 Stop-App 'start-collectionmanager.ps1'

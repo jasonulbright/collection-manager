@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Show white text on every blue background in the light theme: selected grid rows and the buttons of the dialogs.
+- Show the Site Code and SMS Provider FQDN titles of the Options dialog in bold at 14 pt, in both themes. The value boxes keep the body style.
+- Show field labels and titles in bold. Use Title Case for the Rules in This Collection label, the Log Output label and the Parameters column.
+- Use one short sentence for each tooltip.
+
+### Added
+
+- Add ThemeGuard.Tests.ps1. It checks the white text on blue, the equal fonts in both themes, the bold titles, the shared button style and the banned words.
+- Add the -OutDir parameter to the capture tool. The tool now uses its own lab folder and its own task name, and it never deletes C:\guide.
+
+### Changed
+
+- Refresh the vendored SuiteCommon library to release 2026.11.11.0080.
+
 ## [2026.11.07.0020] - 2026-11-07
 
 ## 1 opt-in decides the window tests

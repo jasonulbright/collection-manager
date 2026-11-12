@@ -134,6 +134,11 @@
 
             <Style x:Key="GridCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource MahApps.Styles.DataGridCell}">
                 <Setter Property="Padding" Value="6,0,6,0"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="GridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MahApps.Styles.DataGridColumnHeader}">
@@ -201,23 +206,23 @@
                                                IsOn="True"
                                                OnContent="" OffContent=""
                                                MinWidth="0"
-                                               ToolTip="Toggle dark / light theme"/>
+                                               ToolTip="Switch between the dark and the light theme."/>
                     </DockPanel>
                 </StackPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Button x:Name="btnViewCollections" Content="Collections" Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="Browse all device collections, edit membership, create / copy / remove"/>
+                                ToolTip="Show the device collections of the site."/>
                         <Button x:Name="btnViewWqlEditor"  Content="WQL Editor"  Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="Offline WQL editor for collection query rules with validation and preview"/>
+                                ToolTip="Edit the WQL of collection query rules."/>
                         <Button x:Name="btnViewTemplates"  Content="Templates"   Style="{StaticResource ViewButtonStyle}"
-                                ToolTip="Ready-made and parameterized query templates"/>
+                                ToolTip="Show the query templates."/>
 
                         <Button x:Name="btnOptions" Content="Options"
                                 Style="{StaticResource OptionsButtonStyle}"
                                 Margin="8,24,8,3"
-                                ToolTip="Site code, SMS provider, about"/>
+                                ToolTip="Set the site code and the SMS Provider."/>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
@@ -240,7 +245,7 @@
 
             <Border Grid.Row="0" Background="{DynamicResource MahApps.Brushes.Gray10}" Padding="16,12,16,10">
                 <StackPanel>
-                    <TextBlock x:Name="txtModuleTitle" Text="Collections" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="txtModuleTitle" Text="Collections" FontSize="18" FontWeight="Bold"/>
                     <TextBlock x:Name="txtModuleSubtitle"
                                Text="Connect for query and collection work. Refresh loads the full collection inventory."
                                FontSize="11"
@@ -266,12 +271,12 @@
                                 Style="{StaticResource SquareInlineButtonStyle}"
                                 MinWidth="120"
                                 Margin="0,0,8,0"
-                                ToolTip="Connect to the configured site without loading the collection inventory"/>
+                                ToolTip="Connect to the site without loading the collections."/>
                         <Button x:Name="btnRefresh"
                                 Content="Refresh"
                                 Style="{StaticResource SquareInlineButtonStyle}"
                                 MinWidth="120"
-                                ToolTip="Load the full collection inventory (or, on the Templates view, reload templates from disk)"/>
+                                ToolTip="Load all device collections from the site."/>
                     </StackPanel>
 
                     <TextBox x:Name="txtFilter"
@@ -352,11 +357,11 @@
                                 <Button x:Name="btnNewCollection"  Content="New Collection"   Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
                                         ToolTip="Create a new device collection"/>
                                 <Button x:Name="btnCopyCollection" Content="Copy..."          Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
-                                        ToolTip="Clone the selected collection (rules + name + comment)"/>
+                                        ToolTip="Copy the selected collection with its rules."/>
                                 <Button x:Name="btnEditMembership" Content="Edit Membership..." Style="{StaticResource SquareInlineButtonStyle}" MinWidth="150"
-                                        ToolTip="Add / remove direct members, include / exclude rules"/>
+                                        ToolTip="Edit direct members and include and exclude rules."/>
                                 <Button x:Name="btnEvaluateColl"   Content="Evaluate"         Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
-                                        ToolTip="Force a membership evaluation on the selected collection"/>
+                                        ToolTip="Start a membership update for the selected collection."/>
                                 <Button x:Name="btnRemoveColl"     Content="Remove..."        Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
                                         ToolTip="Delete the selected collection"/>
                             </StackPanel>
@@ -442,7 +447,7 @@
                                              Controls:TextBoxHelper.Watermark="Collection ID (open one collection)"/>
                                     <Button x:Name="btnOpenWqlCollection" Grid.Column="1" Content="Open by ID"
                                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
-                                            ToolTip="Load one collection and its query rules without scanning the site"/>
+                                            ToolTip="Load one collection and its query rules."/>
                                 </Grid>
                                 <TextBox x:Name="txtWqlTreeFilter" DockPanel.Dock="Top" FontSize="12" Padding="6,4,6,4" Margin="0,8,0,8"
                                          Controls:TextBoxHelper.Watermark="Filter collections by name or ID..."/>
@@ -546,7 +551,7 @@
                                    Text="Pick a collection from the tree on the left."
                                    TextTrimming="CharacterEllipsis"/>
 
-                        <TextBlock Grid.Row="1" Text="Rules in this collection" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,4"/>
+                        <TextBlock Grid.Row="1" Text="Rules in This Collection" FontSize="11" FontWeight="Bold" Margin="0,4,0,4"/>
                         <Border Grid.Row="2" BorderThickness="1"
                                 BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
                                 Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
@@ -555,7 +560,7 @@
                                      Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/>
                         </Border>
 
-                        <TextBlock Grid.Row="3" Text="Rule Name" FontSize="11" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                        <TextBlock Grid.Row="3" Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
                         <TextBox x:Name="txtRuleName" Grid.Row="4" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,8"/>
 
                         <TextBox x:Name="txtWqlEditor" Grid.Row="5" Style="{StaticResource WqlEditorStyle}"
@@ -569,7 +574,7 @@
                                 <Button x:Name="btnValidateWql" Content="Validate Query"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
                                         ToolTip="Run a syntax check on the WQL editor contents"/>
                                 <Button x:Name="btnPreviewWql"  Content="Preview Results" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
-                                        ToolTip="Run the WQL against the SMS Provider and show match count + sample"/>
+                                        ToolTip="Run the WQL on the SMS Provider and show the matching devices."/>
                                 <Button x:Name="btnAddRule"    Content="Add Rule"    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
                                         ToolTip="Add the editor contents as a new query rule"/>
                                 <Button x:Name="btnUpdateRule" Content="Update Rule" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="110"
@@ -616,7 +621,7 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Category" Width="120" Binding="{Binding Category}"/>
                                     <DataGridTextColumn Header="Name"     Width="*"   Binding="{Binding Name}"/>
-                                    <DataGridTextColumn Header="Params"   Width="60"  Binding="{Binding ParameterCount}"/>
+                                    <DataGridTextColumn Header="Parameters"   Width="60"  Binding="{Binding ParameterCount}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
@@ -637,15 +642,15 @@
                         </Border>
 
                         <StackPanel DockPanel.Dock="Top">
-                            <TextBlock Text="Description" FontSize="11" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                            <TextBlock Text="Description" FontSize="11" FontWeight="Bold" Margin="0,8,0,4"/>
                             <TextBlock x:Name="txtTemplateDescription" TextWrapping="Wrap" FontSize="12"
                                        Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
 
-                            <TextBlock Text="Limiting Collection" FontSize="11" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                            <TextBlock Text="Limiting Collection" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
                             <TextBlock x:Name="txtTemplateLimiting" FontSize="12"
                                        Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
 
-                            <TextBlock x:Name="txtTemplateParamsHeader" Text="Parameters" FontSize="11" FontWeight="SemiBold" Margin="0,12,0,4" Visibility="Collapsed"/>
+                            <TextBlock x:Name="txtTemplateParamsHeader" Text="Parameters" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Visibility="Collapsed"/>
                             <ItemsControl x:Name="itemsTemplateParams" Margin="0,0,0,8">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -658,7 +663,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Text="Expanded WQL" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,4"/>
+                            <TextBlock Text="Expanded WQL" FontSize="11" FontWeight="Bold" Margin="0,4,0,4"/>
                         </StackPanel>
 
                         <TextBox x:Name="txtTemplateExpandedQuery"
@@ -690,7 +695,7 @@
                                                Foreground="{DynamicResource MahApps.Brushes.Accent}"/>
                         <TextBlock x:Name="txtProgressTitle"
                                    Text="Loading..."
-                                   FontSize="18" FontWeight="SemiBold"
+                                   FontSize="18" FontWeight="Bold"
                                    HorizontalAlignment="Center"
                                    Margin="0,14,0,0"/>
                         <TextBlock x:Name="txtProgressStep"
@@ -709,8 +714,8 @@
 
             <Border Grid.Row="4">
                 <DockPanel>
-                    <TextBlock x:Name="lblLogOutput" DockPanel.Dock="Top" Text="LOG OUTPUT"
-                               FontSize="10" FontWeight="SemiBold"
+                    <TextBlock x:Name="lblLogOutput" DockPanel.Dock="Top" Text="Log Output"
+                               FontSize="10" FontWeight="Bold"
                                Margin="8,6,0,4"/>
                     <TextBox x:Name="txtLog"
                              IsReadOnly="True"
