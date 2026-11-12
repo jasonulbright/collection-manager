@@ -1743,6 +1743,7 @@ function Show-NewCollectionDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
@@ -1755,11 +1756,11 @@ function Show-NewCollectionDialog {
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Name" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtName" FontSize="12" Padding="6,4,6,4"
                      Controls:TextBoxHelper.Watermark="e.g. Workstations - Pilot Ring"/>
 
-            <TextBlock Text="Limiting Collection" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Limiting Collection" FontSize="11" FontWeight="Bold" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -1778,11 +1779,11 @@ function Show-NewCollectionDialog {
                         ToolTip="Browse the folder tree to pick the limiting collection"/>
             </Grid>
 
-            <TextBlock Text="Comment" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Comment" FontSize="11" FontWeight="Bold" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtComment" FontSize="12" Padding="6,4,6,4"
                      Controls:TextBoxHelper.Watermark="Optional"/>
 
-            <TextBlock Text="Refresh Type" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Refresh Type" FontSize="11" FontWeight="Bold" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <ComboBox x:Name="cboRefresh" FontSize="12">
                 <ComboBoxItem Content="Manual"/>
                 <ComboBoxItem Content="Periodic"/>
@@ -1906,6 +1907,7 @@ function Show-CopyCollectionDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
@@ -1919,11 +1921,11 @@ function Show-CopyCollectionDialog {
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Source" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Source" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBlock x:Name="txtSource" FontSize="13" FontWeight="SemiBold"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
-            <TextBlock Text="New Name" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="New Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtNewName" FontSize="12" Padding="6,4,6,4"
                      Controls:TextBoxHelper.Watermark="Name of the new collection"/>
         </StackPanel>
@@ -2004,6 +2006,21 @@ function Show-EditMembershipDialog {
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
+            <Style x:Key="MemberRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource MahApps.Styles.DataGridRow}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource MahApps.Brushes.Accent}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="MemberCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource MahApps.Styles.DataGridCell}">
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
     <Grid Margin="16,12,16,12">
@@ -2020,10 +2037,11 @@ function Show-EditMembershipDialog {
                   SelectionMode="Extended" SelectionUnit="FullRow"
                   Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                   Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                  RowStyle="{StaticResource MemberRowStyle}" CellStyle="{StaticResource MemberCellStyle}"
                   RowHeaderWidth="0" BorderThickness="0" FontSize="11">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name"        Width="2*" Binding="{Binding Name}"/>
-                <DataGridTextColumn Header="ResourceID"  Width="120" Binding="{Binding ResourceID}"/>
+                <DataGridTextColumn Header="Resource ID"  Width="120" Binding="{Binding ResourceID}"/>
                 <DataGridTextColumn Header="Domain"      Width="*"  Binding="{Binding Domain}"/>
             </DataGrid.Columns>
         </DataGrid>
@@ -2149,6 +2167,7 @@ function Show-ApplyTemplateDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
@@ -2165,11 +2184,11 @@ function Show-ApplyTemplateDialog {
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Template" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Template" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBlock x:Name="txtTemplateName" FontSize="13" FontWeight="SemiBold"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,12,0,0">
-            <TextBlock Text="Target Collection" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Target Collection" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -2189,10 +2208,10 @@ function Show-ApplyTemplateDialog {
             </Grid>
         </StackPanel>
         <StackPanel Grid.Row="2" Margin="0,12,0,0">
-            <TextBlock Text="Rule Name" FontSize="11" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+            <TextBlock Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtRuleName" FontSize="12" Padding="6,4,6,4"/>
         </StackPanel>
-        <TextBlock Grid.Row="3" Text="Expanded WQL" FontSize="11" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
+        <TextBlock Grid.Row="3" Text="Expanded WQL" FontSize="11" FontWeight="Bold" Margin="0,12,0,2" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
         <TextBox x:Name="txtExpanded" Grid.Row="4" IsReadOnly="True"
                  AcceptsReturn="True" TextWrapping="NoWrap"
                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
@@ -2500,6 +2519,7 @@ function Show-OptionsDialog {
                 <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
             <Style x:Key="DialogAccentButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square.Accent}">
+                <Setter Property="Foreground" Value="{DynamicResource MahApps.Brushes.IdealForeground}"/>
                 <Setter Property="MinWidth" Value="90"/>
                 <Setter Property="Height" Value="32"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
@@ -2529,12 +2549,12 @@ function Show-OptionsDialog {
 
         <Grid Grid.Column="2" Grid.Row="0" Margin="20,16,20,16">
             <StackPanel x:Name="paneConnection" Visibility="Visible">
-                <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <TextBlock Text="Site Code" FontSize="11" Margin="0,4,0,2"
+                <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock x:Name="lblSiteCode" Text="Site Code" FontSize="14" FontWeight="Bold" Margin="0,4,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. P01" Width="120" HorizontalAlignment="Left"/>
-                <TextBlock Text="SMS Provider FQDN" FontSize="11" Margin="0,12,0,2"
+                <TextBlock x:Name="lblSmsProvider" Text="SMS Provider FQDN" FontSize="14" FontWeight="Bold" Margin="0,12,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
                          Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
@@ -2544,7 +2564,7 @@ function Show-OptionsDialog {
             </StackPanel>
 
             <StackPanel x:Name="paneAbout" Visibility="Collapsed">
-                <TextBlock Text="About" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <TextBlock Text="About" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.2.1"
                            FontSize="13" FontWeight="SemiBold"/>
                 <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a 1-shot result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."

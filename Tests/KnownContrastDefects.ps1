@@ -5,7 +5,7 @@
 #
 # Text must reach 4.5:1 and a control border 3:1, enabled and disabled, in both
 # themes. The causes are shared by every suite tool: the SuiteCommon palette
-# (sidebar button border #555555 on #1E1E1E is 2.06:1), the MahApps disabled
+# (the MahApps disabled
 # style, the light text box border and the unselected tab header. The fix
 # belongs in app-packager-suite, then a sync of the vendored copy, not here.
 
@@ -17,13 +17,11 @@ function Get-KnownContrastDefect {
                 'btnAddRule:DisabledText', 'btnApplyTemplate:DisabledText', 'btnConnect:DisabledText',
                 'btnCopyCollection:DisabledText', 'btnCopyToWqlEditor:DisabledText', 'btnEditMembership:DisabledText',
                 'btnEvaluateColl:DisabledText', 'btnExportCsv:DisabledText', 'btnExportHtml:DisabledText',
-                'btnNewCollection:DisabledText', 'btnOpenWqlCollection:DisabledText', 'btnOptions:DisabledBorder',
-                'btnOptions:EnabledBorder', 'btnPreviewWql:DisabledText', 'btnRefresh:DisabledText',
+                'btnNewCollection:DisabledText', 'btnOpenWqlCollection:DisabledText',
+                'btnPreviewWql:DisabledText', 'btnRefresh:DisabledText',
                 'btnRemoveColl:DisabledText', 'btnRemoveRule:DisabledText', 'btnUpdateRule:DisabledText',
-                'btnValidateWql:DisabledText', 'btnViewCollections:DisabledBorder', 'btnViewCollections:DisabledText',
-                'btnViewCollections:EnabledBorder', 'btnViewTemplates:DisabledBorder', 'btnViewTemplates:DisabledText',
-                'btnViewTemplates:EnabledBorder', 'btnViewWqlEditor:DisabledBorder', 'btnViewWqlEditor:DisabledText',
-                'btnViewWqlEditor:EnabledBorder',
+                'btnValidateWql:DisabledText', 'btnViewCollections:DisabledText',
+                'btnViewTemplates:DisabledText', 'btnViewWqlEditor:DisabledText',
                 'titlebar:inactive', 'txtTemplateExpandedQuery:DisabledBorder',
                 'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder'
             )

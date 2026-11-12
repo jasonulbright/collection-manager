@@ -35,7 +35,7 @@ The page shows the version and a short description.
 
 ### Theme
 
-The **Dark Theme** switch at the bottom of the sidebar changes the theme. The tool keeps the choice.
+The **Dark Theme** switch at the bottom of the sidebar changes the theme. The tool keeps the choice. The theme changes colors only. Font size, weight and style stay the same.
 
 ![The Collections view in the light theme](../images/light-collections.png)
 
