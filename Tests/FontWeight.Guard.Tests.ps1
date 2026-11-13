@@ -9,7 +9,8 @@
 # title keep their normal weight (SemiBold or Normal). A theme change must never
 # make them bold.
 #
-# Field title, as the test defines it:
+# (A button in a container is skipped when the test looks for the first control.)
+# Field title, as the test defines it (an allow-list entry is the text, or Text@FontSize to name one size):
 #   - a TextBlock or Label whose next control in the same panel is an input
 #     (TextBox, PasswordBox, ComboBox, CheckBox, RadioButton, DatePicker, Slider,
 #     ToggleSwitch, NumericUpDown, TimePicker), or the one in the cell to its
@@ -102,7 +103,7 @@ BeforeAll {
         if ($null -eq $Node -or $Node -isnot [System.Xml.XmlElement]) { return $false }
         $layout = 'Border|Grid|StackPanel|DockPanel|WrapPanel|Canvas|ScrollViewer|Viewbox|UniformGrid'
         if ($Node.LocalName -match ('^(' + $layout + ')$')) {
-            foreach ($child in @($Node.ChildNodes | Where-Object { $_ -is [System.Xml.XmlElement] -and $_.LocalName -notmatch '\.' })) {
+            foreach ($child in @($Node.ChildNodes | Where-Object { $_ -is [System.Xml.XmlElement] -and $_.LocalName -notmatch '\.' -and $_.LocalName -ne 'Button' })) {
                 return (Test-FirstControlIsInput -Node $child)
             }
             return $false
@@ -145,8 +146,8 @@ BeforeAll {
     function Test-FieldTitle {
         param($Node)
         if ($script:LabelName -notcontains $Node.LocalName) { return $false }
-        if ($Node.GetAttribute('Text') -in $script:AllowedTitleText) { return $true }
-        if ($Node.GetAttribute('Content') -in $script:AllowedTitleText) { return $true }
+        $caption = $Node.GetAttribute('Text'); if (-not $caption) { $caption = $Node.GetAttribute('Content') }
+        if ($caption -and ($script:AllowedTitleText -contains $caption -or $script:AllowedTitleText -contains ('{0}@{1}' -f $caption, $Node.GetAttribute('FontSize')))) { return $true }
         $style = $Node.GetAttribute('Style')
         foreach ($k in $script:AllowedTitleStyleKey) { if ($style -match ('StaticResource\s+' + [regex]::Escape($k) + '\b')) { return $true } }
         Test-FirstControlIsInput -Node (Get-TitledControl -Label $Node)
@@ -337,7 +338,7 @@ Describe 'The font weight check itself' {
     }
 
     It 'passes the allowed cases' {
-        $d = New-XmlSample '<StackPanel><TextBlock x:Name="txtAppTitle" FontWeight="Bold"/><TextBlock Text="Name" FontWeight="Bold"/><TextBox/><TextBlock Text="Description" FontWeight="Bold"/><TextBlock x:Name="txtModuleTitle" FontWeight="SemiBold"/><Button FontWeight="Bold"/></StackPanel>'
+        $d = New-XmlSample '<StackPanel><TextBlock x:Name="txtAppTitle" FontWeight="Bold"/><TextBlock Text="Name" FontWeight="Bold"/><TextBox/><TextBlock x:Name="txtModuleTitle" FontWeight="SemiBold"/><Button FontWeight="Bold"/></StackPanel>'
         @(Get-BoldViolation -Document $d).Count | Should -Be 0
         @(Get-NeverBoldViolation -Document $d).Count | Should -Be 0
         $ast = [System.Management.Automation.Language.Parser]::ParseInput('function Set-ConnectionTextTheme { param($t) $t.FontWeight = [System.Windows.FontWeights]::Bold } function Other { param($t) $t.FontWeight = [System.Windows.FontWeights]::SemiBold }', [ref]$null, [ref]$null)
@@ -347,5 +348,19 @@ Describe 'The font weight check itself' {
     It 'takes a label above an input and a label left of an input in a Grid as field titles' {
         $d = New-XmlSample '<Grid><TextBlock Grid.Row="0" Grid.Column="0" Text="A" FontWeight="Bold"/><ComboBox Grid.Row="0" Grid.Column="1"/><TextBlock Grid.Row="1" Text="B" FontWeight="Bold"/><TextBox Grid.Row="2"/></Grid>'
         @(Get-BoldViolation -Document $d).Count | Should -Be 0
+    }
+}
+
+Describe 'The allow-list of the font weight check' {
+    It 'takes a label with the text of the allow-list as a field title, and no other label' {
+        $saved = $script:AllowedTitleText
+        try {
+            $script:AllowedTitleText = @('Value Label')
+            $d = New-XmlSample '<StackPanel><TextBlock Text="Value Label" FontWeight="Bold"/><TextBlock Text="Other Label" FontWeight="Bold"/></StackPanel>'
+            $bad = @(Get-BoldViolation -Document $d)
+            $bad.Count | Should -Be 1
+            $bad[0] | Should -Match 'Other Label'
+        }
+        finally { $script:AllowedTitleText = $saved }
     }
 }
