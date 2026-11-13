@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Show page headers, status and About text in the normal weight, not bold.
+- Add a guard test that fails when text other than a field title is bold.
+
 ## [2026.11.12.0021] - 2026-11-12
 
 ## 0 blue buttons with unreadable text in the light theme
