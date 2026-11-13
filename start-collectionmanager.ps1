@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Main window of Collection Manager, a tool that manages Configuration Manager device collections with an offline WQL editor.
 
