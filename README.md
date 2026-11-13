@@ -41,6 +41,7 @@ The shell uses a sidebar layout with three views and an Options modal:
 - **WQL Editor** -- open one collection by ID or use the tree after a full refresh. Pick a rule, edit the WQL in the monospace editor, click **Validate Query** to syntax-check via `Invoke-CMWmiQuery`, click **Preview Results** to see how many devices match. Add, Update, or Remove rules with single clicks.
 - The WQL Editor's **Site Queries** tab lists queries already saved in the Configuration Manager site. Load one into the editor, save a new reusable query, update the selected saved query, or delete it from the site.
 - **Templates** -- two tabs (Operational, Parameterized). Pick a template; for parameterized ones, fill in the parameters and watch the expanded WQL update live. Then **Copy to WQL Editor** for hand-tuning, or **Apply to Collection** to push the rule onto a target collection.
+- **Footer** -- the status text on the left and the site on the right, for example `Site MCM · cm01.contoso.com`. The footer is read-only. Select the site text to open Options. You change the site code and the SMS Provider only in **Options**.
 
 ## Workflows
 

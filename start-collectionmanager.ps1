@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Main window of Collection Manager, a tool that manages Configuration Manager device collections with an offline WQL editor.
 
@@ -238,6 +238,12 @@ function Set-StatusText {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Updates an in-window TextBlock only; no external state.')]
     param([Parameter(Mandatory)][string]$Text)
     $txtStatus.Text = $Text
+}
+
+function Sync-FooterSite {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Updates an in-window TextBlock only; no external state.')]
+    param()
+    Update-SuiteFooter -Window $window -SiteCode ([string]$global:Prefs.SiteCode) -SiteServer ([string]$global:Prefs.SMSProvider)
 }
 
 # =============================================================================
@@ -1163,6 +1169,7 @@ function Invoke-ConnectSite {
                 Set-StatusText 'Connection failed.'
             }
             Update-StatusBarSummary
+            Sync-FooterSite
         }
     })
     $script:BgTimer.Start()
@@ -2634,6 +2641,7 @@ function Show-OptionsDialog {
         $global:Prefs.SiteCode    = $newSite
         $global:Prefs.SMSProvider = $newProvider
         Save-CmPreferences -Prefs $global:Prefs
+        Sync-FooterSite
 
         if ($connectionChanged) {
             Dispose-BgWork
@@ -2709,6 +2717,8 @@ $window.Add_Loaded({
 
     Update-ActionBarVisibility
     Update-StatusBarSummary
+    [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { Show-OptionsDialog })
+    Sync-FooterSite
     Add-LogLine 'Collection Manager ready. Connect to the site for query work, or refresh to load all collections.'
 
     # Auto-load templates so the Templates view is populated on first switch
