@@ -344,6 +344,21 @@ Describe 'The site fields' {
 }
 
 Describe 'The footer check itself' {
+    # The samples below use the names of the sample code, not the names of the app.
+    BeforeEach {
+        $script:SavedConfig = @{ Loaded = $script:LoadedMember; Options = $script:OptionsFunction; Connect = $script:ConnectFunction; Titles = $script:AllowedWindowTitle }
+        $script:LoadedMember = 'Add_Loaded'
+        $script:OptionsFunction = 'Show-OptionsDialog'
+        $script:ConnectFunction = @('Invoke-ConnectSite')
+        $script:AllowedWindowTitle = @('Options')
+    }
+    AfterEach {
+        $script:LoadedMember = $script:SavedConfig.Loaded
+        $script:OptionsFunction = $script:SavedConfig.Options
+        $script:ConnectFunction = $script:SavedConfig.Connect
+        $script:AllowedWindowTitle = $script:SavedConfig.Titles
+    }
+
     It 'fails a font size on the status element (bad sample)' {
         $d = New-XmlSample '<Border><TextBlock x:Name="txtStatus" FontSize="12"/></Border>'
         @(Get-FooterFontViolation -Document $d -Name @('txtStatus')).Count | Should -Be 1
