@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- Show the site code and the SMS Provider in the footer, for example `Site MCM · cm01.contoso.com`. The footer shows `Site not set` while a value is empty. Select the text to open Options.
+- Add a guard test for the footer: one status element, no font setting on it, the footer calls, and no editable site field outside Options.
+
+### Changed
+
+- Show the status text and the site text in the one footer style of SuiteCommon. The status text no longer sets its own font size.
+- Refresh the vendored SuiteCommon library to release 2026.11.13.0082.
+- Retake the user guide images and the README screenshot.
+
 ### Fixed
 
 - Show page headers, status and About text in the normal weight, not bold.
