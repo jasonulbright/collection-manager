@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
+
 ## [2026.11.14.0024] - 2026-11-14
 
 ## 13 new version entries and 7 fixes for spacing, dialogs and buttons
@@ -14,6 +18,8 @@
 - Point the Not Latest client query at version 2609.
 
 ### Fixed
+
+- Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
 
 - Fix the client build of ConfigMgr version 2309.
 - Space the WQL Editor on a 4 and 8 px grid and label the query box.
@@ -40,7 +46,7 @@
 
 ### Added
 
-- Show the site code and the SMS Provider in the footer, for example `Site MCM · cm01.contoso.com`. The footer shows `Site not set` while a value is empty. Select the text to open Options.
+- Show the site code and the SMS Provider in the footer, for example `Site MCM`, a middle dot, and `cm01.contoso.com`. The footer shows `Site not set` while a value is empty. Select the text to open Options.
 - Add a guard test for the footer: one status element, no font setting on it, the footer calls, and no editable site field outside Options.
 
 ### Changed
@@ -276,8 +282,8 @@ file.
   (`Connect-CMSite`, `Disconnect-CMSite`, `Test-CMConnection`) now load
   from `Lib\SuiteCommon\`, shared across the tool suite and synced from
   the suite-core repository instead of hand-edited per repo. Behavior is
-  unchanged — same log format, same connection flow (globally scoped
-  CMSite PSDrive, `Get-CMSite` verification) — and the connection now
+  unchanged - same log format, same connection flow (globally scoped
+  CMSite PSDrive, `Get-CMSite` verification) - and the connection now
   survives a stale drive whose provider connection died: `Connect-CMSite`
   tears it down and rebuilds it instead of failing.
 - **Module manifest GUID corrected** to a unique value (it previously

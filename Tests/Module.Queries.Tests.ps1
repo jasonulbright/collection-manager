@@ -1,4 +1,4 @@
-﻿#Requires -Modules Pester
+#Requires -Modules Pester
 # Read side: folders, collections, detail, rules, members and saved site queries.
 # The ConfigMgr cmdlets are replaced by stubs and mocked. Fixture values reach
 # the mock bodies through $global:Fx, because a mock body runs in the module scope.
@@ -42,7 +42,7 @@ Describe 'Get-CMCollectionFolderTree' {
     }
 
     It 'keeps the unicode and quote characters of a folder name' {
-        $global:Fx = "Ünï 'quoted' <b>"
+        $global:Fx = "$([char]0x00DC)n$([char]0x00EF) 'quoted' <b>"
         Mock Get-CimInstance { [PSCustomObject]@{ ContainerNodeID = 1; Name = $global:Fx; ParentContainerNodeID = 0 } } -ModuleName CollectionManagerCommon
         (@(Get-CMCollectionFolderTree -SMSProvider 'cm01' -SiteCode 'MCM'))[0].Name | Should -Be $global:Fx
     }

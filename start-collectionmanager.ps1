@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Main window of Collection Manager, a tool that manages Configuration Manager device collections with an offline WQL editor.
 
@@ -372,11 +372,11 @@ $window.Dispatcher.Add_UnhandledException({
 })
 
 # =============================================================================
-# Glyph mapping per brand: ✓/✗/⋯/⚠ at ThemeForeground (no colored fills).
+# Glyph mapping per brand: U+2713/U+2717/U+22EF/U+26A0 at ThemeForeground (no colored fills).
 # =============================================================================
 function Get-CollectionTypeGlyph {
     param($Collection)
-    if ($Collection.IsBuiltIn) { return [char]0x22EF }   # ⋯ system-managed, read-only
+    if ($Collection.IsBuiltIn) { return [char]0x22EF }   # U+22EF system-managed, read-only
     return ''
 }
 

@@ -1,4 +1,4 @@
-﻿#Requires -Modules Pester
+#Requires -Modules Pester
 # WQL validation and preview, template loading and expansion, CSV and HTML export.
 
 BeforeAll {
@@ -127,8 +127,8 @@ Describe 'Template files' {
     It 'reads unicode text and a path with spaces and brackets' {
         $path = Join-Path $TestDrive 'dir [1] x\t.json'
         New-Item -ItemType Directory -Path (Split-Path $path) -Force | Out-Null
-        [IO.File]::WriteAllText($path, '[{"Name":"Ünï 日本","Query":"q"}]', (New-Object Text.UTF8Encoding $false))
-        (@(Get-OperationalTemplates -TemplatesPath $path))[0].Name | Should -Be 'Ünï 日本'
+        [IO.File]::WriteAllText($path, ('[{"Name":"' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C + '","Query":"q"}]'), (New-Object Text.UTF8Encoding $false))
+        (@(Get-OperationalTemplates -TemplatesPath $path))[0].Name | Should -Be ('' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C)
     }
 
     It 'loads the shipped <Fn> file' -ForEach @(
@@ -158,7 +158,7 @@ Describe 'Expand-TemplateParameters' {
         @{ Name = 'no parameters';    Q = 'select 1';            V = @{};                                 Expected = 'select 1' }
         @{ Name = 'an unknown token'; Q = '{A} {B}';             V = @{ '{A}' = 'x' };                    Expected = 'x {B}' }
         @{ Name = 'a quote value';    Q = "'{A}'";               V = @{ '{A}' = "O'Brien" };              Expected = "'O'Brien'" }
-        @{ Name = 'unicode';          Q = '{A}';                 V = @{ '{A}' = 'Ünï 日本' };             Expected = 'Ünï 日本' }
+        @{ Name = 'unicode';          Q = '{A}';                 V = @{ '{A}' = ('' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C) };             Expected = ('' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C) }
     ) {
         Expand-TemplateParameters -QueryTemplate $Q -ParameterValues $V | Should -BeExactly $Expected
     }
@@ -204,7 +204,7 @@ Describe 'Export-CollectionCsv' {
         @{ Name = 'comma'; Value = 'a,b' }
         @{ Name = 'quote'; Value = 'say "hi"' }
         @{ Name = 'newline'; Value = "l1`r`nl2" }
-        @{ Name = 'unicode'; Value = 'Ünï 日本語' }
+        @{ Name = 'unicode'; Value = ('' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C + [char]0x8A9E) }
         @{ Name = 'long'; Value = ('x' * 20000) }
     ) {
         $path = Join-Path $TestDrive "h-$Name.csv"

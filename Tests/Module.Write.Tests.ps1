@@ -1,4 +1,4 @@
-﻿#Requires -Modules Pester
+#Requires -Modules Pester
 # Write actions: collections, direct members, rules, evaluation.
 # ConfigMgr cmdlets are stubs and mocks. Covers success, failure, partial failure,
 # -WhatIf, built-in protection and hostile input.
@@ -56,7 +56,7 @@ Describe 'New-ManagedCollection' {
     It 'passes the hostile name <Name> through unchanged' -ForEach @(
         @{ Name = "O'Brien ""Q"" <b>" }
         @{ Name = ('n' * 300) }
-        @{ Name = 'Ünï 日本語' }
+        @{ Name = ('' + [char]0x00DC + 'n' + [char]0x00EF + ' ' + [char]0x65E5 + [char]0x672C + [char]0x8A9E) }
         @{ Name = '..\..\x' }
     ) {
         $global:Fx = $Name
