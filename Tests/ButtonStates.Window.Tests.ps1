@@ -8,17 +8,20 @@
 
 BeforeDiscovery {
     . "$PSScriptRoot\WindowHarness.ps1"
-    $script:WindowGuard = Test-WindowTestsAllowed
+    $guard = Test-WindowTestsAllowed
     $script:Visible = ($env:SUITE_VISIBLE_WINDOWS -eq '1')
-    if ($script:WindowGuard.Allowed -and -not $script:Visible) { Write-Host 'Button state tests skipped: SUITE_VISIBLE_WINDOWS is not 1 (they need the real mouse).' }
+    if ($guard.Allowed -and -not $script:Visible) { Write-Host 'Button state tests skipped: SUITE_VISIBLE_WINDOWS is not 1 (they need the real mouse).' }
+    # The window guard of this file also needs the visible run, because the test moves the real mouse.
+    $script:WindowGuard = [pscustomobject]@{ Allowed = ($guard.Allowed -and $script:Visible); Reason = $guard.Reason }
     $script:ThemeCases = @(@{ Dark = $true; Theme = 'dark' }, @{ Dark = $false; Theme = 'light' })
 }
 
 BeforeAll {
     . "$PSScriptRoot\WindowHarness.ps1"
-    $script:WindowGuard = Test-WindowTestsAllowed
+    $guard = Test-WindowTestsAllowed
     $script:Visible = ($env:SUITE_VISIBLE_WINDOWS -eq '1')
-    if (-not $script:WindowGuard.Allowed -or -not $script:Visible) { return }
+    $script:WindowGuard = [pscustomobject]@{ Allowed = ($guard.Allowed -and $script:Visible); Reason = $guard.Reason }
+    if (-not $script:WindowGuard.Allowed) { return }
     . "$PSScriptRoot\WindowConfig.ps1"
     $script:Measured = @{}
     foreach ($dark in $true, $false) {
@@ -121,7 +124,7 @@ BeforeAll {
     }
 }
 
-Describe 'Button states <Theme>' -ForEach $script:ThemeCases -Skip:(-not ($script:WindowGuard.Allowed -and $script:Visible)) {
+Describe 'Button states <Theme>' -ForEach $script:ThemeCases -Skip:(-not $script:WindowGuard.Allowed) {
     BeforeAll { $script:Rows = @($script:Measured[$Theme] | ForEach-Object { $_ } | Where-Object { $_.PSObject.Properties['States'] }) }
 
     It 'samples at least 3 buttons and reaches the focus, hover and pressed states' {
