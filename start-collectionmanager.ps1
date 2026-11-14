@@ -306,7 +306,7 @@ $toggleTheme.Add_Toggled({
 $script:ViewMeta = @{
     'Collections' = @{ Title = 'Collections'; Subtitle = 'Connect to the site for collection and query actions. Refresh loads the full collection inventory.' }
     'WQL Editor'  = @{ Title = 'WQL Editor';  Subtitle = 'Open one collection by ID, load saved site queries, or refresh the full inventory. Connect to validate and edit WQL.' }
-    'Templates'   = @{ Title = 'Templates';   Subtitle = '157 ready-made operational queries plus 20 parameterized templates. Apply to a collection or copy into the WQL Editor.' }
+    'Templates'   = @{ Title = 'Templates';   Subtitle = '238 ready-made operational queries plus 20 parameterized templates. Apply to a collection or copy into the WQL Editor.' }
 }
 
 function Set-ActiveView {
@@ -2577,7 +2577,7 @@ function Show-OptionsDialog {
                            FontSize="13" FontWeight="SemiBold"/>
                 <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a 1-shot result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
-                <TextBlock Text="157 ready-made operational queries plus 20 parameterized templates ship with the app."
+                <TextBlock Text="238 ready-made operational queries plus 20 parameterized templates ship with the app."
                            FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
                 <TextBlock Text="Author: Jason Ulbright. License: MIT."
                            FontSize="11" Margin="0,16,0,0"

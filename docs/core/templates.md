@@ -1,6 +1,6 @@
 # Templates
 
-The Templates view holds 225 ready-made operational queries and 20 parameterized templates.
+The Templates view holds 238 ready-made operational queries and 20 parameterized templates.
 
 ## What it does
 

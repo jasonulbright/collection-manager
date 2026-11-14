@@ -37,7 +37,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.Build = '{BuildNumber}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "e.g., '10.0.22631' for Win11 23H2", "DefaultValue": "" }
+      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "e.g., '10.0.26200' for Win11 25H2", "DefaultValue": "" }
     ]
   },
   {
@@ -47,7 +47,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '{VersionPattern}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{VersionPattern}", "Label": "Version Pattern", "HelpText": "e.g., '5.00.9128' for 2403", "DefaultValue": "" }
+      { "Placeholder": "{VersionPattern}", "Label": "Version Pattern", "HelpText": "e.g., '5.00.9152' for 2609", "DefaultValue": "" }
     ]
   },
   {
