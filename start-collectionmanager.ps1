@@ -2068,7 +2068,7 @@ function Show-EditMembershipDialog {
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button x:Name="btnClose" Content="Close" Style="{StaticResource DialogButton}" IsCancel="True"/>
+            <Button x:Name="btnClose" Content="Close" Style="{StaticResource DialogButton}" Margin="0" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Controls:MetroWindow>

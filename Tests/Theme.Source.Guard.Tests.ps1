@@ -13,7 +13,7 @@
 BeforeDiscovery {
     $script:Root = Split-Path -Path $PSScriptRoot -Parent
     $script:OwnFiles = @(Get-ChildItem -LiteralPath $script:Root -Recurse -File -Include '*.xaml', '*.ps1', '*.psm1' |
-            Where-Object { $_.FullName -notmatch '[\\/](Lib|Tests|\.git|\.claude|docs|tools|node_modules)[\\/]' } |
+            Where-Object { $_.FullName.Substring($script:Root.Length) -notmatch'[\\/](Lib|Tests|\.git|\.claude|docs|tools|node_modules)[\\/]' } |
             ForEach-Object { @{ Path = $_.FullName; Name = $_.FullName.Substring($script:Root.Length + 1) } })
     $script:ScriptFiles = @($script:OwnFiles | Where-Object { $_.Name -like '*.ps1' -or $_.Name -like '*.psm1' })
 }
