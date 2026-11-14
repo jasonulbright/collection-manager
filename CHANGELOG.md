@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Take the measurement of the button state and dialog chrome window tests from SuiteCommon (Get-SuiteButtonStateReport, Get-SuiteWindowChrome), and sync the vendored SuiteCommon.
+
 ## [2026.11.14.0027] - 2026-11-14
 
 ## 1 new window test for button states

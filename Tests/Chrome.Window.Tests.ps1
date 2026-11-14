@@ -37,44 +37,11 @@ BeforeAll {
             $cfg = $Arguments.Config
             $main = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark
             Initialize-ShellTheme -Window $main -Dark $Arguments.Dark -Views $cfg.Views -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $cfg.Views[0].Name
-            $hex = { param($b) if ($b -is [System.Windows.Media.SolidColorBrush]) { $b.Color.ToString() } else { '' } }
-            $rel = {
-                param($c)
-                $f = { param($v) $v = $v / 255.0; if ($v -le 0.03928) { $v / 12.92 } else { [math]::Pow(($v + 0.055) / 1.055, 2.4) } }
-                0.2126 * (& $f $c.R) + 0.7152 * (& $f $c.G) + 0.0722 * (& $f $c.B)
-            }
-            $ratio = {
-                param($a, $b)
-                $l1 = & $rel $a; $l2 = & $rel $b
-                if ($l1 -lt $l2) { $t = $l1; $l1 = $l2; $l2 = $t }
-                ($l1 + 0.05) / ($l2 + 0.05)
-            }
-            $buttonRows = {
-                param($win, $label)
-                $rows = @()
-                foreach ($d in (Get-VisualDescendants $win)) {
-                    if ($d -is [System.Windows.Controls.Primitives.ButtonBase] -and $d -isnot [System.Windows.Controls.Primitives.ToggleButton] -and (Test-VisibleInTree $d)) {
-                        # Skip the window command buttons (minimize, maximize, close) and the template buttons of other controls.
-                        if ($d.GetType().Name -ne 'Button') { continue }
-                        if ($d.TemplatedParent -and $d.TemplatedParent.GetType().Name -ne 'Button') { continue }
-                        $content = if ($d.Content -is [string]) { $d.Content } else { $d.Name }
-                        if (-not $content) { continue }
-                        $fgBrush = $d.Foreground
-                        $rows += [pscustomobject]@{
-                            Window = $label; Name = $d.Name; Text = [string]$content; Weight = $d.FontWeight.ToOpenTypeWeight()
-                            BorderThickness = [math]::Max([math]::Max($d.BorderThickness.Left, $d.BorderThickness.Right), [math]::Max($d.BorderThickness.Top, $d.BorderThickness.Bottom))
-                            BorderColor = (& $hex $d.BorderBrush); ForegroundColor = (& $hex $fgBrush)
-                        }
-                    }
-                }
-                $rows
-            }
-            $themeText = & $hex $main.FindResource('MahApps.Brushes.ThemeForeground')
-            $mainRows = @(& $buttonRows $main 'main')
+            $mainChrome = Get-SuiteWindowChrome -Window $main -Label 'main'
             $out = [pscustomobject]@{
-                ThemeText = $themeText
-                MainTitle = (& $hex $main.WindowTitleBrush); MainTitleInactive = (& $hex $main.NonActiveWindowTitleBrush)
-                Main = $mainRows; Dialogs = @()
+                ThemeText = $mainChrome.ThemeText
+                MainTitle = $mainChrome.Active; MainTitleInactive = $mainChrome.Inactive
+                Main = @($mainChrome.Buttons); Dialogs = @()
             }
             $i = 0
             foreach ($xaml in $Arguments.Dialogs) {
@@ -86,15 +53,8 @@ BeforeAll {
                 $d.ShowInTaskbar = $false
                 Set-DialogTheme -Dialog $d -IsDark $Arguments.Dark
                 $d.Show(); Wait-Layout $d
-                $title = $d.Title
-                $tbText = if ($d.TitleForeground -is [System.Windows.Media.SolidColorBrush]) { $d.TitleForeground.Color } else { [System.Windows.Media.Colors]::White }
-                $act = $d.WindowTitleBrush
-                $out.Dialogs += [pscustomobject]@{
-                    Title = $title; Index = $i
-                    Active = (& $hex $act); Inactive = (& $hex $d.NonActiveWindowTitleBrush)
-                    TitleRatio = $(if ($act -is [System.Windows.Media.SolidColorBrush]) { [math]::Round((& $ratio $tbText $act.Color), 2) } else { 0 })
-                    Buttons = @(& $buttonRows $d $title)
-                }
+                $c = Get-SuiteWindowChrome -Window $d -Label ([string]$d.Title)
+                $out.Dialogs += [pscustomobject]@{ Title = $c.Title; Index = $i; Active = $c.Active; Inactive = $c.Inactive; TitleRatio = $c.TitleRatio; Buttons = @($c.Buttons) }
                 $d.Close()
             }
             $main.Close()
