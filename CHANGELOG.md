@@ -4,7 +4,7 @@
 
 ## [2026.11.14.0024] - 2026-11-14
 
-## 13 new entries in the shipped version lists
+## 13 new version entries and 7 fixes for spacing, dialogs and buttons
 
 ### Added
 
@@ -16,6 +16,13 @@
 ### Fixed
 
 - Fix the client build of ConfigMgr version 2309.
+- Space the WQL Editor on a 4 and 8 px grid and label the query box.
+- Show button borders at 1 px in gray, with no heavy black border.
+- Give the Options dialog the shared title bar and chrome.
+- Space the dialog labels on the 4 px grid; size New Collection to its content.
+- Show the details pane in the UI font, with a Type column header.
+- Add tests for the WQL spacing, the dialog chrome and the button style.
+- Add guards for muted text brushes and the dialog theme call.
 
 ## [2026.11.14.0023] - 2026-11-14
 
