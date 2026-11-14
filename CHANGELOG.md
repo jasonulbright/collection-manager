@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add a window test for the hover, focus and pressed states of the buttons.
+
 ## [2026.11.14.0026] - 2026-11-14
 
 ## 1 new guard test
