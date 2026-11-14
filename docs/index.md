@@ -10,7 +10,7 @@ Collection Manager manages Configuration Manager device collections and their WQ
 
 - [Collections](core/collections.md): the collection grid, the detail tabs, New Collection, Copy, Edit Membership, Evaluate and Remove.
 - [WQL Editor](core/wql-editor.md): open a collection, edit a query rule, Validate Query and Preview Results, and the saved site queries.
-- [Templates](core/templates.md): 225 operational and 20 parameterized queries, Copy to WQL Editor and Apply to Collection.
+- [Templates](core/templates.md): 238 operational and 20 parameterized queries, Copy to WQL Editor and Apply to Collection.
 - [Options dialog](core/options.md): Connection and About, and the theme.
 
 ## Reference
@@ -23,6 +23,7 @@ Collection Manager manages Configuration Manager device collections and their WQ
 - [Error messages](reference/error-messages.md): message, cause and fix.
 - [Glossary](reference/glossary.md): the terms of the tool.
 - [Capture the images again](reference/capture-images.md): the one command that regenerates the images of this guide.
+- [Refresh the version lists](VERSION-REFRESH.md): where each shipped version list lives and which Microsoft page gives the newest value.
 - [Light theme check](reference/light-theme-check.md): the light theme states, with the colors read from the screen.
 
 ## External references
