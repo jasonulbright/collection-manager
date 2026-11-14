@@ -7,7 +7,7 @@
 
 Manage Configuration Manager device collections with an offline WQL editor. Bypass the slow console query editor -- load all collections into a local grid, edit WQL queries in a fast monospace editor, validate, preview results, and apply changes in bulk.
 
-Ships with a template library: 225 ready-made operational queries and 20 parameterized WQL templates.
+Ships with a template library: 238 ready-made operational queries and 20 parameterized WQL templates.
 
 ![Collection Manager](screenshot.png)
 
@@ -102,7 +102,7 @@ collectionmanager/
 |  +- CollectionManagerCommon.psd1           # Module manifest
 |  \- CollectionManagerCommon.psm1           # Business logic (25 functions)
 +- Templates/
-|  +- operational-collections.json           # 225 ready-made queries
+|  +- operational-collections.json           # 238 ready-made queries
 |  \- parameterized-templates.json           # 20 parameterized templates
 +- CHANGELOG.md
 +- LICENSE

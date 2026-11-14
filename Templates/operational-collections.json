@@ -14,10 +14,10 @@
     "RefreshType": "Both"
   },
   {
-    "Name": "Clients Version | Not Latest (2509)",
+    "Name": "Clients Version | Not Latest (2609)",
     "Category": "Clients Version",
     "LimitingCollection": "Clients | All",
-    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion not like '5.00.9141.10%'",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion not like '5.00.9152.10%'",
     "RefreshType": "Both"
   },
   {
@@ -238,6 +238,13 @@
     "RefreshType": "Both"
   },
   {
+    "Name": "Clients Version | 2211",
+    "Category": "Clients Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9096.10%'",
+    "RefreshType": "Both"
+  },
+  {
     "Name": "Clients Version | 2303",
     "Category": "Clients Version",
     "LimitingCollection": "All Systems",
@@ -248,7 +255,7 @@
     "Name": "Clients Version | 2309",
     "Category": "Clients Version",
     "LimitingCollection": "All Systems",
-    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9120.10%'",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9122.10%'",
     "RefreshType": "Both"
   },
   {
@@ -1106,6 +1113,20 @@
     "RefreshType": "Both"
   },
   {
+    "Name": "Workstations | Windows 11 v26H1",
+    "Category": "Workstations",
+    "LimitingCollection": "Workstations | Windows 11",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.Build = '10.0.28000'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Workstations | Windows 11 v26H2",
+    "Category": "Workstations",
+    "LimitingCollection": "Workstations | Windows 11",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.Build = '10.0.26300'",
+    "RefreshType": "Both"
+  },
+  {
     "Name": "Servers | Windows 2022",
     "Category": "Servers",
     "LimitingCollection": "Servers | All",
@@ -1138,6 +1159,20 @@
     "Category": "Clients Version",
     "LimitingCollection": "All Systems",
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9141.10%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Clients Version | 2603",
+    "Category": "Clients Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9146.10%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Clients Version | 2609",
+    "Category": "Clients Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '5.00.9152.10%'",
     "RefreshType": "Both"
   },
   {
@@ -1491,6 +1526,13 @@
     "RefreshType": "Both"
   },
   {
+    "Name": "Microsoft 365 Apps Build | 2601",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.19628.%'",
+    "RefreshType": "Both"
+  },
+  {
     "Name": "Microsoft 365 Apps Build | 2602",
     "Category": "Microsoft 365 Apps Build Version",
     "LimitingCollection": "All Systems",
@@ -1502,6 +1544,55 @@
     "Category": "Microsoft 365 Apps Build Version",
     "LimitingCollection": "All Systems",
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.19822.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2604",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.19929.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2605",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20026.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2606",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20131.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2607",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20228.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2608",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20326.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2609",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20430.%'",
+    "RefreshType": "Both"
+  },
+  {
+    "Name": "Microsoft 365 Apps Build | 2610",
+    "Category": "Microsoft 365 Apps Build Version",
+    "LimitingCollection": "All Systems",
+    "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS on SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.ResourceId = SMS_R_System.ResourceId where SMS_G_System_OFFICE365PROPLUSCONFIGURATIONS.VersionToReport like '16.0.20527.%'",
     "RefreshType": "Both"
   },
   {

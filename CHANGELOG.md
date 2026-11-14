@@ -5,6 +5,23 @@
 ### Fixed
 
 - Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
+
+## [2026.11.14.0024] - 2026-11-14
+
+## 13 new version entries and 7 fixes for spacing, dialogs and buttons
+
+### Added
+
+- Add ConfigMgr client versions 2211, 2603 and 2609.
+- Add Microsoft 365 Apps builds 2601 and 2604 to 2610.
+- Add Windows 11 versions 26H1 and 26H2.
+- Point the Not Latest client query at version 2609.
+
+### Fixed
+
+- Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
+
+- Fix the client build of ConfigMgr version 2309.
 - Space the WQL Editor on a 4 and 8 px grid and label the query box.
 - Show button borders at 1 px in gray, with no heavy black border.
 - Give the Options dialog the shared title bar and chrome.
