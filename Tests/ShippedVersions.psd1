@@ -1,5 +1,5 @@
 # Reference values for every version list that the shipped templates carry.
-# TestsShippedLists.Tests.ps1 compares Templates*.json with this file.
+# Tests/ShippedLists.Tests.ps1 compares Templates/*.json with this file.
 # Refresh steps: docs\VERSION-REFRESH.md. Each section names its source page.
 # Every value below was read from the source page on VerifiedOn.
 @{
