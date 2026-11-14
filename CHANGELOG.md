@@ -2,11 +2,15 @@
 
 ## [Unreleased]
 
+## [2026.11.14.0023] - 2026-11-14
+
+## 3 fixes for contrast, shared styles and window tests
+
 ### Fixed
 
-- Show the title bar of an inactive window with white text at 4.5:1 contrast or more in both themes.
-- Show text boxes, combo boxes and grid headers with the shared border and disabled-text styles in both themes.
-- Let the window tests show their windows at 80,80 when SUITE_VISIBLE_WINDOWS is 1, for the visible run in the labadmin session of CLIENT01. Without the variable the windows stay at -32000.
+- Show the inactive title bar with white text at 4.5:1 contrast in both themes.
+- Show text boxes, combo boxes and grid headers with the shared styles in both themes.
+- Show window tests on screen when SUITE_VISIBLE_WINDOWS is 1; the default stays off screen.
 
 ## [2026.11.13.0022] - 2026-11-13
 
