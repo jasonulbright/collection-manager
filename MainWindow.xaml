@@ -103,6 +103,8 @@
             </Style>
 
             <Style x:Key="SquareInlineButtonStyle" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
                 <Setter Property="Height" Value="28"/>
                 <Setter Property="MinWidth" Value="100"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
@@ -168,8 +170,7 @@
                 <Setter Property="IsReadOnly" Value="True"/>
                 <Setter Property="TextWrapping" Value="Wrap"/>
                 <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-                <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New"/>
-                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="8"/>
             </Style>
@@ -209,7 +210,7 @@
                 <StackPanel DockPanel.Dock="Top" Margin="14,14,14,12">
                     <TextBlock x:Name="txtAppTitle" Text="Collection Manager"
                                FontSize="20" FontWeight="Bold" TextWrapping="Wrap"/>
-                    <TextBlock x:Name="txtVersion" Text="" FontSize="10"
+                    <TextBlock x:Name="txtVersion" Text="" FontSize="12"
                                Foreground="{DynamicResource MahApps.Brushes.Gray1}"
                                Margin="0,2,0,0"/>
                 </StackPanel>
@@ -239,7 +240,7 @@
 
                         <Button x:Name="btnOptions" Content="Options"
                                 Style="{StaticResource OptionsButtonStyle}"
-                                Margin="8,24,8,3"
+                                Margin="8,16,8,3"
                                 ToolTip="Set the site code and the SMS Provider."/>
                     </StackPanel>
                 </ScrollViewer>
@@ -343,9 +344,9 @@
                               ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
                               CellStyle="{StaticResource GridCellStyle}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="" Width="32"
+                            <DataGridTextColumn Header="Type" Width="56"
                                                 Binding="{Binding TypeGlyph}"/>
-                            <DataGridTextColumn Header="Name" Width="2*"
+                            <DataGridTextColumn Header="Name" Width="2*" MinWidth="160"
                                                 Binding="{Binding Name}"/>
                             <DataGridTextColumn Header="ID" Width="100"
                                                 Binding="{Binding CollectionID}"/>
@@ -355,7 +356,7 @@
                                                 Binding="{Binding LimitingCollection}"/>
                             <DataGridTextColumn Header="Refresh" Width="100"
                                                 Binding="{Binding RefreshType}"/>
-                            <DataGridTextColumn Header="Comment" Width="*"
+                            <DataGridTextColumn Header="Comment" Width="2*" MinWidth="160"
                                                 Binding="{Binding Comment}"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -449,11 +450,11 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="380" MinWidth="280"/>
                         <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" MinWidth="360"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- LEFT: collections and reusable site queries -->
-                    <TabControl Controls:HeaderedControlHelper.HeaderFontSize="13" x:Name="tabWqlSource" Grid.Column="0" Margin="0,0,0,0">
+                    <TabControl Controls:HeaderedControlHelper.HeaderFontSize="13" x:Name="tabWqlSource" Grid.Column="0" Margin="0,0,8,0">
                         <TabItem><TabItem.Header><TextBlock Text="Collections" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
                             <DockPanel Margin="0,0,0,0">
                                 <Grid DockPanel.Dock="Top" Margin="0,8,0,0">
@@ -555,21 +556,22 @@
                     <!-- RIGHT: rules-in-collection list, rule editor, action buttons -->
                     <Grid Grid.Column="2" Margin="8,0,0,0">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" MinHeight="44"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*" MinHeight="72"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="160"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="2*" MinHeight="80"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock x:Name="txtSelectedColl" Grid.Row="0" FontSize="12" Margin="0,8,0,8"
+                        <TextBlock x:Name="txtSelectedColl" Grid.Row="0" FontSize="12" VerticalAlignment="Center"
                                    Foreground="{DynamicResource MahApps.Brushes.Gray1}"
                                    Text="Pick a collection from the tree on the left."
                                    TextTrimming="CharacterEllipsis"/>
 
-                        <TextBlock Grid.Row="1" Text="Rules in This Collection" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,4"/>
+                        <TextBlock Grid.Row="1" Text="Rules in This Collection" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
                         <Border Grid.Row="2" BorderThickness="1"
                                 BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
                                 Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
@@ -579,28 +581,29 @@
                         </Border>
 
                         <TextBlock Grid.Row="3" Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
-                        <TextBox x:Name="txtRuleName" Grid.Row="4" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,8"/>
+                        <TextBox x:Name="txtRuleName" Grid.Row="4" FontSize="12" Padding="6,4,6,4" Height="28"/>
 
-                        <TextBox x:Name="txtWqlEditor" Grid.Row="5" Style="{StaticResource WqlEditorStyle}"
+                        <TextBlock Grid.Row="5" Text="Query" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
+                        <TextBox x:Name="txtWqlEditor" Grid.Row="6" Style="{StaticResource WqlEditorStyle}"
                                  Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                  Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
                                  BorderThickness="1"
                                  BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"/>
 
-                        <Border Grid.Row="6" Padding="0,8,0,8">
+                        <Border Grid.Row="7" Padding="0,12,0,0">
                             <WrapPanel Orientation="Horizontal">
-                                <Button x:Name="btnValidateWql" Content="Validate Query"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
+                                <Button x:Name="btnValidateWql" Content="Validate Query"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130" Margin="0,0,8,8"
                                         ToolTip="Run a syntax check on the WQL editor contents"/>
-                                <Button x:Name="btnPreviewWql"  Content="Preview Results" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130"
+                                <Button x:Name="btnPreviewWql"  Content="Preview Results" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130" Margin="0,0,8,8"
                                         ToolTip="Run the WQL on the SMS Provider and show the matching devices."/>
-                                <Button x:Name="btnAddRule"    Content="Add Rule"    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
+                                <Button x:Name="btnAddRule"    Content="Add Rule"    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100" Margin="0,0,8,8"
                                         ToolTip="Add the editor contents as a new query rule"/>
-                                <Button x:Name="btnUpdateRule" Content="Update Rule" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="110"
+                                <Button x:Name="btnUpdateRule" Content="Update Rule" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="110" Margin="0,0,8,8"
                                         ToolTip="Replace the selected rule's WQL with the editor contents"/>
-                                <Button x:Name="btnRemoveRule" Content="Remove..."   Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
+                                <Button x:Name="btnRemoveRule" Content="Remove..."   Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100" Margin="0,0,8,8"
                                         ToolTip="Delete the selected query rule"/>
                                 <TextBlock x:Name="txtWqlValidation" FontSize="12"
-                                           VerticalAlignment="Center" Margin="8,0,0,0"
+                                           VerticalAlignment="Center" Margin="0,4,0,12"
                                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                             </WrapPanel>
                         </Border>
