@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+## [2026.11.14.0025] - 2026-11-14
+
+## 0 non-ASCII characters left in the PowerShell sources and the files they read
+
 ### Fixed
 
-- Make the PowerShell sources and the files they read plain ASCII, and add the encoding guard.
+- Make PowerShell sources and the files they read plain ASCII, with an encoding guard.
 
 ## [2026.11.14.0024] - 2026-11-14
 
