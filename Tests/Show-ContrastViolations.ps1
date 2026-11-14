@@ -40,4 +40,4 @@ try {
         Write-Host (($keys | Sort-Object -Unique | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ', ')
     }
 }
-finally { Close-WpfSession }
+finally { Close-WpfSession -Force }
