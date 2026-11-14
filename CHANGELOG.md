@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [2026.11.14.0026] - 2026-11-14
+
+## 1 new guard test
+
+### Added
+
+- Add a guard test for button styles.
+
 ## [2026.11.14.0025] - 2026-11-14
 
 ## 0 non-ASCII characters left in the PowerShell sources and the files they read
