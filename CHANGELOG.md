@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+## [2026.11.14.0027] - 2026-11-14
+
+## 1 new window test for button states
+
 ### Added
 
-- Add a window test for the hover, focus and pressed states of the buttons.
+- Add a window test for the hover, focus and pressed states of buttons.
 
 ## [2026.11.14.0026] - 2026-11-14
 
