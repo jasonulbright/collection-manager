@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2026.11.15.0029] - 2026-11-15
+
+## 56 guide images retaken with pressed buttons that stay blue
+
 ### Fixed
 
 - Keep pressed and hovered buttons blue; all button styles use the SuiteCommon templates.
