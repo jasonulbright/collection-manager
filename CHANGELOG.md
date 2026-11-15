@@ -10,6 +10,7 @@
 ### Changed
 
 - Sync SuiteCommon: light blue inactive title bar with dark caption text.
+- Retake all guide images and the README screenshot, and map the README image to the capture.
 
 ### Added
 
@@ -17,6 +18,7 @@
 - Test hover and pressed states of dialog buttons and add a guard for stray windows.
 - Take the capture lock C:\guide\capture.lock in the guide capture tool, with a -LockWaitMinutes parameter.
 - Add a guard test for the capture lock.
+- Add Sync-ReadmeImages.ps1 and a guard test that the README image matches its capture.
 
 ## [2026.11.14.0028] - 2026-11-14
 
