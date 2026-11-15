@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Take the capture lock C:\guide\capture.lock in the guide capture tool, with a -LockWaitMinutes parameter.
+- Add a guard test for the capture lock.
+
 ## [2026.11.14.0028] - 2026-11-14
 
 ## 47 guide images retaken with bordered dialog buttons
