@@ -201,7 +201,9 @@ Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }
         $violations = New-Object System.Collections.Generic.List[string]
         foreach ($v in ($script:Measured['{0}|1440x900' -f $Theme])) {
             foreach ($c in $v.Interactive) {
-                foreach ($metric in 'EnabledText', 'DisabledText', 'EnabledBorder', 'DisabledBorder') {
+                # A disabled control is exempt from the text and border rules (WCAG 1.4.3 exempts inactive components),
+                # so only the enabled metrics count. The dimmed check below covers the disabled state.
+                foreach ($metric in 'EnabledText', 'EnabledBorder') {
                     $value = $c.$metric
                     if ($null -eq $value) { continue }
                     $min = if ($metric -like '*Text') { 4.5 } else { 3.0 }
@@ -222,5 +224,21 @@ Describe 'Contrast <Theme>' -ForEach @(@{ Theme = 'dark' }, @{ Theme = 'light' }
         $fixed = @($known | Where-Object { $found -notcontains $_ })
         $new | Should -BeNullOrEmpty -Because ('a new contrast violation appeared: ' + ($new -join ', '))
         $fixed | Should -BeNullOrEmpty -Because ('a known defect is fixed: remove it from Get-KnownContrastDefect: ' + ($fixed -join ', '))
+    }
+
+    It 'shows every disabled control clearly dimmed and still readable' {
+        # Disabled controls are exempt from 4.5:1 (WCAG 1.4.3), but a disabled control must not look enabled
+        # (enabled text ratio / disabled text ratio >= 1.25) and its label must not vanish (disabled text ratio >= 1.5).
+        $bad = @()
+        foreach ($v in ($script:Measured['{0}|1440x900' -f $Theme])) {
+            foreach ($c in $v.Interactive) {
+                if ($null -eq $c.EnabledText -or $null -eq $c.DisabledText) { continue }
+                $dim = if ($c.DisabledText -gt 0) { $c.EnabledText / $c.DisabledText } else { [double]::PositiveInfinity }
+                if ($dim -lt 1.25) { $bad += ('{0}: not dimmed (enabled {1}, disabled {2})' -f $c.Name, $c.EnabledText, $c.DisabledText) }
+                elseif ($c.DisabledText -lt 1.5) { $bad += ('{0}: vanishes (disabled {1})' -f $c.Name, $c.DisabledText) }
+            }
+        }
+        $bad = @($bad | Sort-Object -Unique)
+        $bad | Should -BeNullOrEmpty -Because ('disabled controls must look dimmed: ' + ($bad -join '; '))
     }
 }
