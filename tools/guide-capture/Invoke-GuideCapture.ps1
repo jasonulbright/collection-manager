@@ -14,6 +14,13 @@
     Read the steps before you run them: they open dialogs of buttons that change
     the site, and they answer No or Cancel. They never confirm a change.
 
+    One capture runs at a time on a lab computer. The script takes the lock file
+    C:\guide\capture.lock (New-Item fails when the file exists) and waits while another
+    capture holds it. The lock text is owner|pid|start. The script touches the lock in its poll
+    loop, so a live capture never looks stale. A lock older than 30 minutes is stale and the
+    script removes it. The script removes the lock only when it took it. It never removes
+    the folder C:\guide.
+
 .PARAMETER CredentialScript
     A script that sets $LabCredential (a PSCredential). Keep it outside the repository.
 
@@ -28,6 +35,9 @@
 
 .PARAMETER SmsProvider
     The SMS Provider name that the capture types in Options.
+
+.PARAMETER LockWaitMinutes
+    How long to wait for the capture lock of another capture before the script stops.
 
 .PARAMETER OutDir
     A folder that receives a copy of every captured image, also the ones that are not in docs\images. Use it to look at a new state.
@@ -46,6 +56,7 @@ param(
     [string]$SiteCode = 'MCM',
     [Parameter(Mandatory)][string]$SmsProvider,
     [int]$Minutes = 15,
+    [int]$LockWaitMinutes = 90,
     [string]$OutDir,
     [switch]$AddNew
 )
@@ -63,8 +74,39 @@ $settings = @{ SiteCode = $SiteCode; SMSProvider = $SmsProvider } | ConvertTo-Js
 $failed = New-Object System.Collections.Generic.List[string]
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ('guide-capture-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory $tmp | Out-Null
+$lockPath = 'C:\guide\capture.lock'
+$lockText = '{0}|{1}|{2}' -f $app, $PID, (Get-Date).ToString('o')
+$haveLock = $false
 $session = New-PSSession -ComputerName $Target -Credential $LabCredential
 try {
+    # The lock: New-Item with -ErrorAction Stop fails with an IOException when the file exists.
+    # Wait for the holder. A lock older than the stale age belongs to a dead capture and is removed.
+    $haveLock = Invoke-Command $session {
+        param($path, $text, $staleMinutes, $waitMinutes)
+        New-Item -ItemType Directory -Path (Split-Path -Path $path -Parent) -Force | Out-Null
+        $deadline = (Get-Date).AddMinutes($waitMinutes)
+        while ($true) {
+            try {
+                $null = New-Item -ItemType File -Path $path -ErrorAction Stop
+                Set-Content -LiteralPath $path -Value $text
+                return $true
+            }
+            catch [System.IO.IOException] {
+                $held = Get-Item -LiteralPath $path -ErrorAction SilentlyContinue
+                if ($held -and ((Get-Date) - $held.LastWriteTime).TotalMinutes -gt $staleMinutes) {
+                    # Read the age again right before the delete: the holder may have touched the lock.
+                    $again = Get-Item -LiteralPath $path -ErrorAction SilentlyContinue
+                    if ($again -and ((Get-Date) - $again.LastWriteTime).TotalMinutes -gt $staleMinutes) {
+                        Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+                    }
+                    if (-not (Test-Path -LiteralPath $path)) { continue }
+                }
+                if ((Get-Date) -gt $deadline) { return $false }
+                Start-Sleep -Seconds 15
+            }
+        }
+    } -ArgumentList $lockPath, $lockText, 30, $LockWaitMinutes
+    if (-not $haveLock) { throw "Another capture holds $lockPath. The wait of $LockWaitMinutes minutes is over." }
     foreach ($run in @(@{ Steps = 'steps-guide.ps1'; Prefs = $false }, @{ Steps = 'steps-console-missing.ps1'; Prefs = $true })) {
         $dest = $root
         # Stop only the leftovers of an earlier capture: the capture runner and the copy of this app.
@@ -95,7 +137,8 @@ try {
         $done = $false
         do {
             Start-Sleep 5
-            $state = Invoke-Command $session { param($r, $t) [pscustomobject]@{ Done = (Test-Path (Join-Path $r 'ui\out\finished.flag')); Task = (Get-ScheduledTask $t -ErrorAction SilentlyContinue).State; Result = (Get-ScheduledTaskInfo $t -ErrorAction SilentlyContinue).LastTaskResult } } -ArgumentList $root, $taskName
+            # The poll also touches the lock, so that a long capture is never taken for a stale one.
+            $state = Invoke-Command $session { param($r, $t, $lock) (Get-Item -LiteralPath $lock -ErrorAction SilentlyContinue).LastWriteTime = Get-Date; [pscustomobject]@{ Done = (Test-Path (Join-Path $r 'ui\out\finished.flag')); Task = (Get-ScheduledTask $t -ErrorAction SilentlyContinue).State; Result = (Get-ScheduledTaskInfo $t -ErrorAction SilentlyContinue).LastTaskResult } } -ArgumentList $root, $taskName, $lockPath
             $done = $state.Done
             # The task is not running any more, no finished flag exists and the last result is an error: stop now.
             if (-not $done -and $state.Task -eq 'Ready' -and $state.Result -notin 0, 267009, 267011) { throw ("The capture task stopped with result {0}: {1}" -f $state.Result, $run.Steps) }
@@ -131,6 +174,12 @@ finally {
     # Each cleanup runs on its own, so that a failed cleanup cannot replace the original error.
     try { Invoke-Command $session { param($t) Unregister-ScheduledTask $t -Confirm:$false -ErrorAction SilentlyContinue } -ArgumentList $taskName } catch { Write-Warning "Cleanup of the scheduled task failed: $($_.Exception.Message)" }
     try { Invoke-Command $session { param($r) Remove-Item $r -Recurse -Force -ErrorAction SilentlyContinue } -ArgumentList $root } catch { Write-Warning "Cleanup of $root failed: $($_.Exception.Message)" }
+    # Remove the lock last, and only when this capture took it.
+    try {
+        if ($haveLock) {
+            Invoke-Command $session { param($path, $text) if ((Test-Path -LiteralPath $path) -and ((Get-Content -LiteralPath $path -Raw -ErrorAction SilentlyContinue).Trim() -eq $text)) { Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue } } -ArgumentList $lockPath, $lockText
+        }
+    } catch { Write-Warning "Removing the capture lock failed: $($_.Exception.Message)" }
     try { Remove-PSSession $session } catch { Write-Warning "Closing the session failed: $($_.Exception.Message)" }
     try { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue } catch { Write-Warning "Cleanup of $tmp failed: $($_.Exception.Message)" }
 }
