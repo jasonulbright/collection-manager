@@ -167,6 +167,25 @@
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
             </Style>
 
+            <!-- A disabled input is exempt from 4.5:1 text contrast (WCAG 1.4.3). It must look dimmed, so the window test requires it.
+                 The Gray2 border repeats the SuiteCommon implicit style, which a window style of its own replaces. -->
+            <Style TargetType="TextBox" BasedOn="{StaticResource MahApps.Styles.TextBox}">
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style TargetType="ComboBox" BasedOn="{StaticResource MahApps.Styles.ComboBox}">
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
             <Style x:Key="DetailTextStyle" TargetType="TextBox">
                 <Setter Property="IsReadOnly" Value="True"/>
                 <Setter Property="TextWrapping" Value="Wrap"/>
@@ -174,6 +193,11 @@
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="8"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="WqlEditorStyle" TargetType="TextBox">
@@ -184,6 +208,11 @@
                 <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Padding" Value="8"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <Style x:Key="TabHeaderText" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="13"/>
