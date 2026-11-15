@@ -3,7 +3,21 @@ Size-Win $win 1440 900
 $win = Find-Top 'Collection Manager' 10
 function Idle([string]$id = 'btnRefresh', [int]$sec = 300) { Start-Sleep -Seconds 2; if (-not (Wait-Until { $b = Get-El $win $id -Quiet; $b -and $b.Current.IsEnabled } $sec)) { throw ("Timeout: $id did not become enabled in $sec seconds.") }; Start-Sleep -Seconds 2 }
 function Rows($grid) { @((Get-El $win $grid).FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem)))) }
-function Find-Row($grid, [string]$name) { @(Rows $grid) | Where-Object { $_.Current.Name -match ('Name=' + [regex]::Escape($name) + ';') } | Select-Object -First 1 }
+function Find-Row($grid, [string]$name) {
+  $find = { @(Rows $grid) | Where-Object { $_.Current.Name -match ('Name=' + [regex]::Escape($name) + ';') } | Select-Object -First 1 }
+  $r = & $find
+  if ($r) { return $r }
+  # The grid is virtualized: a row far down the list has no UI element until it scrolls into view. Scroll from the top in steps.
+  try {
+    $sp = (Get-El $win $grid).GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern)
+    foreach ($pct in 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100) {
+      $sp.SetScrollPercent([System.Windows.Automation.ScrollPattern]::NoScroll, $pct); Start-Sleep -Milliseconds 400
+      $r = & $find
+      if ($r) { return $r }
+    }
+  } catch { Log ('scroll of ' + $grid + ' failed: ' + $_.Exception.Message) }
+  return $null
+}
 function Select-Row($grid, [string]$name) { $r = Find-Row $grid $name; if (-not $r) { Log ('ERROR: no row ' + $name + ' in ' + $grid); return $false }; Select-El $r; Start-Sleep -Milliseconds 600; return $true }
 function Pick($combo, [string]$item) { Expand-El (Get-El $win $combo); Start-Sleep -Milliseconds 500; Click-El (Find-Role $win 'ListItem' $item); Start-Sleep -Milliseconds 700 }
 function Tab([string]$name) { Select-El (Find-Role $win 'TabItem' $name); Start-Sleep -Milliseconds 900 }
