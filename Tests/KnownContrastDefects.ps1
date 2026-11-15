@@ -14,14 +14,9 @@ function Get-KnownContrastDefect {
     switch ($Theme) {
         'dark' {
             @(
-                'btnAddRule:DisabledText', 'btnApplyTemplate:DisabledText', 'btnConnect:DisabledText',
-                'btnCopyCollection:DisabledText', 'btnCopyToWqlEditor:DisabledText', 'btnEditMembership:DisabledText',
-                'btnEvaluateColl:DisabledText', 'btnExportCsv:DisabledText', 'btnExportHtml:DisabledText',
-                'btnNewCollection:DisabledText', 'btnOpenWqlCollection:DisabledText', 'btnPreviewWql:DisabledText',
-                'btnRefresh:DisabledText', 'btnRemoveColl:DisabledText', 'btnRemoveRule:DisabledText',
-                'btnUpdateRule:DisabledText', 'btnValidateWql:DisabledText', 'btnViewCollections:DisabledText',
-                'btnViewTemplates:DisabledText', 'btnViewWqlEditor:DisabledText', 'txtTemplateExpandedQuery:DisabledBorder',
-                'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlEditor:DisabledBorder', 'txtWqlEditor:EnabledBorder'
+                'btnViewCollections:DisabledText', 'btnViewTemplates:DisabledText', 'btnViewWqlEditor:DisabledText',
+                'txtTemplateExpandedQuery:DisabledBorder', 'txtTemplateExpandedQuery:EnabledBorder', 'txtWqlEditor:DisabledBorder',
+                'txtWqlEditor:EnabledBorder'
             )
         }
         'light' {

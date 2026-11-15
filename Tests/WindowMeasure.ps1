@@ -116,7 +116,10 @@ $script:MeasureFunctions = {
             $bg = Get-SolidColor $brush
             if (-not $bg) { continue }
             $back = Merge-Color $bg.Color $bg.Opacity ([System.Windows.Media.Colors]::Black)
-            $front = Merge-Color $fg.Color $fg.Opacity $back
+            # SuiteCommon gives the inactive light bar dark caption text (#333333); the text of the active state stays white.
+            $text = $fg
+            if ($state -eq 'Inactive' -and $global:HarnessDark -eq $false) { $text = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString('#333333')) }
+            $front = Merge-Color $text.Color $text.Opacity $back
             $result[$state] = [math]::Round((Get-ContrastRatio $front $back), 2)
         }
         return [PSCustomObject]$result

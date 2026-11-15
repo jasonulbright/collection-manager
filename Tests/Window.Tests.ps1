@@ -67,22 +67,24 @@ BeforeAll {
         $script:Measured[$key] = Invoke-WpfSta -Arguments $case -Script {
             $cfg = $Arguments.Config
             $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark -Width $Arguments.W -Height $Arguments.H
-            $out = @()
-            foreach ($view in $cfg.Views) {
-                foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $view.Name) { 'Visible' } else { 'Collapsed' } }
-                Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views `
-                    -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $view.Name
-                $out += [PSCustomObject]@{
-                    View        = $view.Name
-                    Text        = @(Get-TextContrast $w)
-                    Clipped     = @(Get-ClippedText $w)
-                    Offscreen   = @(Get-OffscreenControls $w)
-                    Interactive = @(Get-InteractiveContrast $w)
-                    TitleBar    = Get-TitleBarContrast $w
+            try {
+                $out = @()
+                foreach ($view in $cfg.Views) {
+                    foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq $view.Name) { 'Visible' } else { 'Collapsed' } }
+                    Initialize-ShellTheme -Window $w -Dark $Arguments.Dark -Views $cfg.Views `
+                        -OptionsButtonName $cfg.OptionsButton -LogLabelName $cfg.LogLabel -ActiveView $view.Name
+                    $out += [PSCustomObject]@{
+                        View        = $view.Name
+                        Text        = @(Get-TextContrast $w)
+                        Clipped     = @(Get-ClippedText $w)
+                        Offscreen   = @(Get-OffscreenControls $w)
+                        Interactive = @(Get-InteractiveContrast $w)
+                        TitleBar    = Get-TitleBarContrast $w
+                    }
                 }
+                , $out
             }
-            $w.Close()
-            , $out
+            finally { $w.Close() }
         }
     }
 }
@@ -93,8 +95,8 @@ Describe 'Main window XAML' -Skip:(-not $script:WindowGuard.Allowed) {
     It 'loads as a MetroWindow with the app title and a minimum size that fits 1024x720' {
         $r = Invoke-WpfSta -Arguments @{ Xaml = $script:AppConfig.Xaml } -Script {
             $w = Open-TestWindow -XamlPath (Join-Path $Root $Arguments.Xaml)
-            $o = [PSCustomObject]@{ Type = $w.GetType().FullName; Title = $w.Title; MinW = $w.MinWidth; MinH = $w.MinHeight }
-            $w.Close(); $o
+            try { [PSCustomObject]@{ Type = $w.GetType().FullName; Title = $w.Title; MinW = $w.MinWidth; MinH = $w.MinHeight } }
+            finally { $w.Close() }
         }
         $r.Type | Should -Be 'MahApps.Metro.Controls.MetroWindow'
         $r.Title | Should -Be $script:AppConfig.Title
@@ -126,8 +128,11 @@ Describe 'Main window XAML' -Skip:(-not $script:WindowGuard.Allowed) {
     It 'shows the first view and keeps the others hidden' {
         $r = Invoke-WpfSta -Arguments @{ Config = $script:AppConfig } -Script {
             $w = Open-TestWindow -XamlPath (Join-Path $Root $Arguments.Config.Xaml)
-            $o = foreach ($v in $Arguments.Config.Views) { [PSCustomObject]@{ Name = $v.Name; Vis = [string]$w.FindName($v.Container).Visibility } }
-            $w.Close(); , @($o)
+            try {
+                $o = foreach ($v in $Arguments.Config.Views) { [PSCustomObject]@{ Name = $v.Name; Vis = [string]$w.FindName($v.Container).Visibility } }
+                , @($o)
+            }
+            finally { $w.Close() }
         }
         $first = $script:AppConfig.Views[0].Name
         ($r | Where-Object Name -eq $first).Vis | Should -Be 'Visible'
