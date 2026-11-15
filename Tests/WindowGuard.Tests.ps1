@@ -10,6 +10,10 @@ BeforeDiscovery {
     $script:WindowTestFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.Tests.ps1' -File -Recurse |
             Where-Object { $_.Name -ne 'WindowGuard.Tests.ps1' -and $_.FullName -notlike '*\Lab\*' -and (Get-Content -LiteralPath $_.FullName -Raw) -match 'Invoke-WpfSta|New-WpfWindow|ShowDialog|\.Show\(\)' } |
             ForEach-Object { @{ Name = $_.FullName.Substring($PSScriptRoot.Length + 1); Path = $_.FullName } })
+    # Every script of the test folder that opens a window itself (the harness and this file excepted).
+    $script:WindowOpenerFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File -Recurse |
+            Where-Object { $_.Name -notin 'WindowHarness.ps1', 'WindowGuard.Tests.ps1' -and $_.FullName -notlike '*\Lab\*' -and (Get-Content -LiteralPath $_.FullName -Raw) -match 'Open-TestWindow|ShowDialog|\.Show\(\)' } |
+            ForEach-Object { @{ Name = $_.FullName.Substring($PSScriptRoot.Length + 1); Path = $_.FullName } })
 }
 
 BeforeAll {
@@ -117,5 +121,53 @@ Describe 'Get-WpfSession refuses where the guard says no' {
     It 'does not hand out a cached session' {
         $script:HarnessSession = [pscustomobject]@{ RunspaceStateInfo = [pscustomobject]@{ State = 'Opened' } }
         { Get-WpfSession } | Should -Throw '*not allowed*'
+    }
+}
+
+Describe 'Window tests leave no window open' {
+    It 'closes the open windows in the finally block of Invoke-WpfSta' {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'WindowHarness.ps1'), [ref]$null, [ref]$null)
+        $fn = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Invoke-WpfSta' }, $true)
+        $fn | Should -Not -BeNullOrEmpty
+        $try = @($fn.FindAll({ param($n) $n -is [System.Management.Automation.Language.TryStatementAst] -and $n.Finally }, $true))
+        $try.Count | Should -BeGreaterThan 0
+        $closing = @($try | Where-Object { $_.Finally.Extent.Text -match 'Close-SuiteOpenWindow' })
+        $closing.Count | Should -BeGreaterThan 0 -Because 'the finally block of Invoke-WpfSta must run Close-SuiteOpenWindow on the STA runspace'
+    }
+
+    It 'finds at least one script that opens a window' -ForEach @(@{ Found = @($script:WindowOpenerFiles).Count }) {
+        $Found | Should -BeGreaterThan 0
+    }
+
+    It '<Name> opens every window inside a try block that has a finally block' -ForEach $script:WindowOpenerFiles {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$null, [ref]$null)
+        $opens = @($ast.FindAll({
+                    param($n)
+                    ($n -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and $n.Member.Value -in 'Show', 'ShowDialog') -or
+                    ($n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Open-TestWindow')
+                }, $true))
+        $bad = @()
+        foreach ($o in $opens) {
+            $guarded = $false
+            # Inside the body of a try that has a finally block.
+            $p = $o.Parent
+            while ($p -and -not $guarded) {
+                if ($p -is [System.Management.Automation.Language.TryStatementAst] -and $p.Finally -and
+                    $o.Extent.StartOffset -ge $p.Body.Extent.StartOffset -and $o.Extent.EndOffset -le $p.Body.Extent.EndOffset) { $guarded = $true }
+                $p = $p.Parent
+            }
+            # Or the statement that opens it is directly followed by such a try (the assignment of the window comes first).
+            if (-not $guarded) {
+                $stmt = $o
+                while ($stmt.Parent -and $stmt.Parent -isnot [System.Management.Automation.Language.NamedBlockAst] -and $stmt.Parent -isnot [System.Management.Automation.Language.StatementBlockAst]) { $stmt = $stmt.Parent }
+                if ($stmt.Parent) {
+                    $list = @($stmt.Parent.Statements)
+                    $at = [array]::IndexOf($list, $stmt)
+                    if ($at -ge 0 -and ($at + 1) -lt $list.Count -and $list[$at + 1] -is [System.Management.Automation.Language.TryStatementAst] -and $list[$at + 1].Finally) { $guarded = $true }
+                }
+            }
+            if (-not $guarded) { $bad += ('line {0}: {1}' -f $o.Extent.StartLineNumber, $o.Extent.Text) }
+        }
+        $bad | Should -BeNullOrEmpty -Because 'a window that stays open after a failed test is left on the desktop of the lab computer'
     }
 }

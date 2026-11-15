@@ -31,39 +31,41 @@ BeforeAll {
         $script:Measured[$key] = Invoke-WpfSta -Arguments $case -Script {
             $cfg = $Arguments.Config
             $w = Open-TestWindow -XamlPath (Join-Path $Root $cfg.Xaml) -Dark $Arguments.Dark -Width $Arguments.W -Height $Arguments.H
-            foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq 'WQL Editor') { 'Visible' } else { 'Collapsed' } }
-            Wait-Layout $w
-            $box = {
-                param($name)
-                $e = $w.FindName($name)
-                $p = $e.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
-                [pscustomobject]@{ Name = $name; Left = $p.X; Top = $p.Y; Right = $p.X + $e.ActualWidth; Bottom = $p.Y + $e.ActualHeight; Width = $e.ActualWidth; Height = $e.ActualHeight }
-            }
-            $names = 'tabWqlSource', 'txtSelectedColl', 'lstWqlRules', 'txtRuleName', 'txtWqlEditor',
-            'btnValidateWql', 'btnPreviewWql', 'btnAddRule', 'btnUpdateRule', 'btnRemoveRule', 'txtWqlValidation'
-            $rows = @(foreach ($n in $names) { & $box $n })
-            # The labels have no name: take the TextBlocks of the right pane by text.
-            $labels = @()
-            foreach ($t in 'Rules in This Collection', 'Rule Name', 'Query') {
-                $tb = $null
-                foreach ($d in (Get-VisualDescendants $w)) { if ($d -is [System.Windows.Controls.TextBlock] -and $d.Text -eq $t -and (Test-VisibleInTree $d)) { $tb = $d; break } }
-                if ($tb) {
-                    $p = $tb.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
-                    $labels += [pscustomobject]@{ Name = $t; Left = $p.X; Top = $p.Y; Right = $p.X + $tb.ActualWidth; Bottom = $p.Y + $tb.ActualHeight; Width = $tb.ActualWidth; Height = $tb.ActualHeight }
+            try {
+                foreach ($v in $cfg.Views) { $w.FindName($v.Container).Visibility = if ($v.Name -eq 'WQL Editor') { 'Visible' } else { 'Collapsed' } }
+                Wait-Layout $w
+                $box = {
+                    param($name)
+                    $e = $w.FindName($name)
+                    $p = $e.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
+                    [pscustomobject]@{ Name = $name; Left = $p.X; Top = $p.Y; Right = $p.X + $e.ActualWidth; Bottom = $p.Y + $e.ActualHeight; Width = $e.ActualWidth; Height = $e.ActualHeight }
                 }
+                $names = 'tabWqlSource', 'txtSelectedColl', 'lstWqlRules', 'txtRuleName', 'txtWqlEditor',
+                'btnValidateWql', 'btnPreviewWql', 'btnAddRule', 'btnUpdateRule', 'btnRemoveRule', 'txtWqlValidation'
+                $rows = @(foreach ($n in $names) { & $box $n })
+                # The labels have no name: take the TextBlocks of the right pane by text.
+                $labels = @()
+                foreach ($t in 'Rules in This Collection', 'Rule Name', 'Query') {
+                    $tb = $null
+                    foreach ($d in (Get-VisualDescendants $w)) { if ($d -is [System.Windows.Controls.TextBlock] -and $d.Text -eq $t -and (Test-VisibleInTree $d)) { $tb = $d; break } }
+                    if ($tb) {
+                        $p = $tb.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
+                        $labels += [pscustomobject]@{ Name = $t; Left = $p.X; Top = $p.Y; Right = $p.X + $tb.ActualWidth; Bottom = $p.Y + $tb.ActualHeight; Width = $tb.ActualWidth; Height = $tb.ActualHeight }
+                    }
+                }
+                $view = $w.FindName('viewWqlEditor')
+                $vp = $view.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
+                $split = $null
+                foreach ($d in (Get-VisualDescendants $view)) { if ($d -is [System.Windows.Controls.GridSplitter] -and $d.Parent -eq $view) { $split = $d; break } }
+                $sp = $split.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
+                $out = [pscustomobject]@{
+                    Controls = $rows; Labels = $labels
+                    Splitter = [pscustomobject]@{ Left = $sp.X; Right = $sp.X + $split.ActualWidth }
+                    View     = [pscustomobject]@{ Left = $vp.X; Top = $vp.Y; Right = $vp.X + $view.ActualWidth; Bottom = $vp.Y + $view.ActualHeight }
+                }
+                $out
             }
-            $view = $w.FindName('viewWqlEditor')
-            $vp = $view.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
-            $split = $null
-            foreach ($d in (Get-VisualDescendants $view)) { if ($d -is [System.Windows.Controls.GridSplitter] -and $d.Parent -eq $view) { $split = $d; break } }
-            $sp = $split.TransformToAncestor($w).Transform([System.Windows.Point]::new(0, 0))
-            $out = [pscustomobject]@{
-                Controls = $rows; Labels = $labels
-                Splitter = [pscustomobject]@{ Left = $sp.X; Right = $sp.X + $split.ActualWidth }
-                View     = [pscustomobject]@{ Left = $vp.X; Top = $vp.Y; Right = $vp.X + $view.ActualWidth; Bottom = $vp.Y + $view.ActualHeight }
-            }
-            $w.Close()
-            $out
+            finally { $w.Close() }
         }
     }
     function Get-Box { param($Case, [string]$Name) @($script:Measured[$Case].Controls) + @($script:Measured[$Case].Labels) | Where-Object Name -eq $Name }

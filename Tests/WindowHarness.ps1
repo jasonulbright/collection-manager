@@ -166,5 +166,16 @@ function Invoke-WpfSta {
     }
     finally {
         $ps.Dispose()
+        # Close every window that the call left open (a failed call skips its own Close), on the same STA runspace.
+        # Errors are ignored: the cleanup must never replace the result or the error of the call.
+        if ($rs.RunspaceStateInfo.State -eq 'Opened') {
+            $cleanup = [powershell]::Create()
+            try {
+                $cleanup.Runspace = $rs
+                [void]$cleanup.AddScript('if (Get-Command Close-SuiteOpenWindow -ErrorAction SilentlyContinue) { [void](Close-SuiteOpenWindow) }', $false)
+                try { [void]$cleanup.Invoke() } catch { $null = $_ }
+            }
+            finally { $cleanup.Dispose() }
+        }
     }
 }

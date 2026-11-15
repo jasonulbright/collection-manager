@@ -2,8 +2,19 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep pressed and hovered buttons blue; all button styles use the SuiteCommon templates.
+- Close every window that a window test leaves open, also after a failure.
+
+### Changed
+
+- Sync SuiteCommon: light blue inactive title bar with dark caption text.
+
 ### Added
 
+- Check the body, inputs and title bar of every dialog against the theme.
+- Test hover and pressed states of dialog buttons and add a guard for stray windows.
 - Take the capture lock C:\guide\capture.lock in the guide capture tool, with a -LockWaitMinutes parameter.
 - Add a guard test for the capture lock.
 
