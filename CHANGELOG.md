@@ -4,6 +4,7 @@
 
 ### Changed
 
+- Retake the 56 guide images and the README screenshot at the 1080p work area.
 - Compact 1080p layout: 36 px sidebar buttons, 26 px controls, 24 px grid rows.
 - Open maximized on first start; the Collections detail pane shares the free height.
 - Capture the guide maximized and report one verdict with the image count.
