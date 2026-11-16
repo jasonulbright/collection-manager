@@ -46,6 +46,13 @@ function Size-Win($Win, [int]$W = 1440, [int]$H = 900) {
     $w2 = [Math]::Min($W, $sw.Width); $h2 = [Math]::Min($H, $sw.Height - 40)
     [void][NativeUi]::MoveWindow($hh, 0, 0, $w2, $h2, $true); Start-Sleep -Milliseconds 900
 }
+function Maximize-Win($Win) {
+    # The design size is the work area of a maximized window on a 1080p screen (D-20): the window fills it, nothing is hardcoded.
+    $Win.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).SetWindowVisualState([System.Windows.Automation.WindowVisualState]::Maximized)
+    Start-Sleep -Milliseconds 1500
+    $wa = [System.Windows.Forms.SystemInformation]::WorkingArea
+    Log ('work area {0}x{1}' -f $wa.Width, $wa.Height)
+}
 function Shot($Win, [string]$Name, [switch]$Hover) {
     if (-not $Hover) { [void][NativeUi]::SetCursorPos(1900, 1060); if ($Win.Current.ClassName -eq 'MetroWindow') { try { (Get-El $Win 'txtLog' -Quiet).SetFocus() } catch { $null = $_ } } }
     Start-Sleep -Milliseconds 1300

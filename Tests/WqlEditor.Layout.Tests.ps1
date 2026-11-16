@@ -1,6 +1,6 @@
 #Requires -Modules Pester
 # Window test for the WQL Editor spacing. The view is shown in both themes at 1024x720 and
-# 1440x900, and the bounds of its controls are measured. Rules, all on the 4/8 px grid:
+# the work area of the session, and the bounds of its controls are measured. Rules, all on the 4/8 px grid:
 #   - 8 px between the tree and the splitter, 8 px between the splitter and the right pane
 #   - 4 px between a label and its box, 12 px between a box and the next label
 #   - the query box is at least 360 px wide and 80 px high, and the whole view fits at 1024x720, with the buttons wrapped to two rows
@@ -11,7 +11,8 @@ BeforeDiscovery {
     $script:WindowGuard = Test-WindowTestsAllowed
     if (-not $script:WindowGuard.Allowed -and -not $env:SUITE_WINDOW_GUARD_REPORTED) { Write-Host ('Window tests skipped: {0}.' -f $script:WindowGuard.Reason) }
     $script:Cases = @(foreach ($dark in $true, $false) {
-            foreach ($size in @(@(1024, 720), @(1440, 900))) {
+            $design = Get-DesignSize
+            foreach ($size in @(@(1024, 720), @($design.W, $design.H))) {
                 @{ Dark = $dark; Theme = $(if ($dark) { 'dark' } else { 'light' }); W = $size[0]; H = $size[1]; Size = ('{0}x{1}' -f $size[0], $size[1]) }
             }
         })
@@ -22,10 +23,11 @@ BeforeAll {
     $script:WindowGuard = Test-WindowTestsAllowed
     if (-not $script:WindowGuard.Allowed) { return }
     . "$PSScriptRoot\WindowConfig.ps1"
+    $script:Design = Get-DesignSize
     $script:Measured = @{}
     foreach ($case in @(
-            @{ Dark = $true; W = 1024; H = 720 }, @{ Dark = $true; W = 1440; H = 900 },
-            @{ Dark = $false; W = 1024; H = 720 }, @{ Dark = $false; W = 1440; H = 900 })) {
+            @{ Dark = $true; W = 1024; H = 720 }, @{ Dark = $true; W = $script:Design.W; H = $script:Design.H },
+            @{ Dark = $false; W = 1024; H = 720 }, @{ Dark = $false; W = $script:Design.W; H = $script:Design.H })) {
         $key = '{0}|{1}x{2}' -f $(if ($case.Dark) { 'dark' } else { 'light' }), $case.W, $case.H
         $case.Config = $script:AppConfig
         $script:Measured[$key] = Invoke-WpfSta -Arguments $case -Script {
@@ -124,7 +126,7 @@ Describe 'WQL Editor spacing (<Theme> <Size>)' -ForEach $script:Cases -Skip:(-no
 
     It 'gives the rules list at least 72 px of height' {
         (Get-Box $script:Key 'lstWqlRules').Height | Should -BeGreaterOrEqual 70
-        (Get-Box $script:Key 'txtRuleName').Height | Should -BeGreaterOrEqual 28
+        (Get-Box $script:Key 'txtRuleName').Height | Should -BeGreaterOrEqual 26
     }
 
     It 'keeps the buttons apart by 8 px, without overlap, inside the view' {
@@ -142,7 +144,7 @@ Describe 'WQL Editor spacing (<Theme> <Size>)' -ForEach $script:Cases -Skip:(-no
         }
         # Wrapped rows keep 8 px between them.
         $tops = @($buttons | Sort-Object Top | Select-Object -ExpandProperty Top -Unique)
-        if ($tops.Count -gt 1) { ($tops[1] - $tops[0] - 28) | Should -BeGreaterOrEqual (8 - $script:Tol) }
+        if ($tops.Count -gt 1) { ($tops[1] - $tops[0] - 26) | Should -BeGreaterOrEqual (8 - $script:Tol) }
     }
 
     It 'leaves 12 px between the query box and the first button row' {

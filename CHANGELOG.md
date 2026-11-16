@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Compact 1080p layout: 36 px sidebar buttons, 26 px controls, 24 px grid rows.
+- Open maximized on first start; the Collections detail pane shares the free height.
+- Capture the guide maximized and report one verdict with the image count.
+
+### Added
+
+- Add density and vacant-area window tests, and a guard for uncaptured guide images.
+
 ## [2026.11.15.0030] - 2026-11-15
 
 ## 5 disabled controls now dim
