@@ -1,5 +1,5 @@
 $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'
-Size-Win $win 1440 900
+Maximize-Win $win
 $win = Find-Top 'Collection Manager' 10
 function Idle([string]$id = 'btnRefresh', [int]$sec = 300) { Start-Sleep -Seconds 2; if (-not (Wait-Until { $b = Get-El $win $id -Quiet; $b -and $b.Current.IsEnabled } $sec)) { throw ("Timeout: $id did not become enabled in $sec seconds.") }; Start-Sleep -Seconds 2 }
 function Rows($grid) { @((Get-El $win $grid).FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::DataItem)))) }

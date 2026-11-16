@@ -6,7 +6,7 @@ if ($patched -eq $t) { throw 'The module lookup function was not found. The miss
 Set-Content -LiteralPath $f -Value $patched -Encoding UTF8
 Remove-Item Env:SMS_ADMIN_UI_PATH -ErrorAction SilentlyContinue
 $win = Start-App 'start-collectionmanager.ps1' 'Collection Manager'
-Size-Win $win 1440 900
+Maximize-Win $win
 $win = Find-Top 'Collection Manager' 10
 Invoke-El (Get-El $win 'btnRefresh')
 # Wait for the log to show the failed refresh. A fixed sleep is not evidence.
