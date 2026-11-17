@@ -24,7 +24,7 @@ Describe 'Invoke-GuideCapture capture lock' {
         $p.DefaultValue.Extent.Text | Should -Be '90'
     }
 
-    It 'takes the lock with New-Item and an IOException catch, and treats a lock older than 30 minutes as stale' {
+    It 'takes the lock with New-Item and an IOException catch, and treats a lock as stale only after 30 minutes with no running owner' {
         $newItem = @($script:Ast.FindAll({
                     param($n)
                     $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'New-Item' -and
@@ -37,8 +37,10 @@ Describe 'Invoke-GuideCapture capture lock' {
                     @($n.CatchTypes | Where-Object { $_.TypeName.FullName -eq 'System.IO.IOException' }).Count -gt 0
                 }, $true))
         $catch.Count | Should -Be 1
-        $script:Text | Should -Match '-ArgumentList \$lockPath, \$lockText, 30, \$LockWaitMinutes'
-        $script:Text | Should -Match 'TotalMinutes -gt \$staleMinutes'
+        $script:Text | Should -Match '-ArgumentList \$lockPath, \$lockText'
+        $script:Text | Should -Match '\[int\]\$age -gt 30 -and \$aliveLab -ne ''True'' -and -not \(Get-Process -Id \$ownerPid'
+        $script:Text | Should -Match 'The stale lab lock .* was removed'
+        $script:Text | Should -Match '''unknown: '' \+ \$held'
     }
 
     It 'writes the lock text as owner|pid|start' {
@@ -46,7 +48,7 @@ Describe 'Invoke-GuideCapture capture lock' {
     }
 
     It 'takes the lock before it registers the scheduled task' {
-        $iLock = $script:Text.IndexOf('$haveLock = Invoke-Command')
+        $iLock = $script:Text.IndexOf('$lockEnd = (Get-Date).AddMinutes')
         $iRegister = $script:Text.IndexOf('Register-ScheduledTask')
         $iLock | Should -BeGreaterThan -1
         $iRegister | Should -BeGreaterThan $iLock
@@ -61,7 +63,6 @@ Describe 'Invoke-GuideCapture capture lock' {
         $script:Finally | Should -Not -BeNullOrEmpty
         $fin = $script:Finally.Extent.Text
         $fin | Should -Match 'if \(\$haveLock\)'
-        $fin | Should -Match 'Remove-Item -LiteralPath \$path -Force'
         $fin | Should -Match '-eq \$text\)'
         $removals = @($script:Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] -and $n.GetCommandName() -eq 'Remove-Item' }, $true))
         foreach ($c in $removals) { $c.Extent.Text | Should -Not -Match 'C:\\guide\b(?!\\)' -Because $c.Extent.Text }
