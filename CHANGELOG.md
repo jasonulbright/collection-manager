@@ -13,6 +13,10 @@
 
 - Add density and vacant-area window tests, and a guard for uncaptured guide images.
 
+### Fixed
+
+- Vendor the SuiteCommon dialogs that take ThemedButtonStyle.
+
 ## [2026.11.15.0030] - 2026-11-15
 
 ## 5 disabled controls now dim
