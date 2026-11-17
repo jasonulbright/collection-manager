@@ -16,6 +16,7 @@
 ### Fixed
 
 - Vendor the SuiteCommon dialogs that take ThemedButtonStyle.
+- Vendor SuiteCommon with the atomic settings save: the settings file is written to a temp file and replaced in one step, so a failed write cannot leave it truncated.
 
 ## [2026.11.15.0030] - 2026-11-15
 
