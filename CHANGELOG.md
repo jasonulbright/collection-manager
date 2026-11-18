@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2026.11.18.0031] - 2026-11-18
+
+## 13 changes: ranged member loads, Cancel, 1080p layout
+
 ### Changed
 
 - Retake the 56 guide images and the README screenshot at the 1080p work area.
