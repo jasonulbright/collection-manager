@@ -22,6 +22,7 @@
 - Vendor SuiteCommon with the atomic settings save: the settings file is written to a temp file and replaced in one step, so a failed write cannot leave it truncated.
 - Capture tool lock follows D-16: the lock text is owner|pid|start, a lock is stale only after 30 minutes with no running owner process, a live owner lock is never removed, a removed lock is reported, and the holder refreshes it.
 - Load the members of a collection and the Edit Membership list in the background, in ResourceID ranges with a retry of transient faults, so a large collection no longer freezes the window; a range that fails gives a note and the rest still shows. The collection and folder reads retry too.
+- Add and remove of direct members in the Edit Membership dialog run in the background (own runspace, one write at a time, buttons off while it runs), so the window no longer waits for the site.
 
 ## [2026.11.15.0030] - 2026-11-15
 

@@ -14,7 +14,7 @@ BeforeAll {
         if (-not $fn) { throw "Function $Name not found" }
         return $fn.Extent.Text
     }
-    $script:CmCall = 'Get-CollectionMembers|Get-CMCollectionMember|Get-CM[A-Z]\w*|Invoke-CM\w+|Get-CimInstance|Get-WmiObject|Connect-CMSite|Set-Location\s+\$'
+    $script:CmCall = 'Add-DirectMember|Remove-DirectMember|Get-CollectionMembers|Get-CMCollectionMember|Get-CM[A-Z]\w*|Invoke-CM\w+|Get-CimInstance|Get-WmiObject|Connect-CMSite|Set-Location\s+\$'
 }
 
 Describe 'Member loads stay off the UI thread' {
@@ -65,5 +65,31 @@ Describe 'The load can be cancelled' {
         $fn | Should -Match 'Close-SuiteBgRunspace -Runspace \$script:BgRunspace'
         $fn | Should -Match '\$progressOverlay\.Visibility = \[System\.Windows\.Visibility\]::Collapsed'
         $fn | Should -Not -Match $script:CmCall
+    }
+}
+
+Describe 'Add and remove of direct members stay off the UI thread' {
+    It 'starts both writes through Start-DirectMemberWrite and calls no write in the dialog itself' {
+        $dialog = Get-FunctionText -Name 'Show-EditMembershipDialog'
+        $dialog | Should -Match "Start-DirectMemberWrite -DlgState \`$dlgState -Kind 'Add'"
+        $dialog | Should -Match "Start-DirectMemberWrite -DlgState \`$dlgState -Kind 'Remove'"
+        $dialog | Should -Not -Match 'Add-DirectMember|Remove-DirectMember'
+    }
+
+    It 'runs the write in a runspace of its own with Start-SuiteBgWork, connects there and checks the cancel flag' {
+        $helper = Get-FunctionText -Name 'Start-DirectMemberWrite'
+        $helper | Should -Match 'New-SuiteBgRunspace'
+        $helper | Should -Match 'Start-SuiteBgWork -Runspace \$DlgState\.WriteRunspace'
+        $helper | Should -Match 'Connect-CMSite -SiteCode \$Site -SMSProvider \$Provider'
+        $helper | Should -Match "\`$State\['Cancel'\]"
+        $helper | Should -Match 'IsEnabled = \$false'
+    }
+
+    It 'turns the buttons on again and reloads the list when the write ends, and stops the write when the dialog closes' {
+        $dialog = Get-FunctionText -Name 'Show-EditMembershipDialog'
+        ([regex]::Matches($dialog, 'IsEnabled = \$true')).Count | Should -BeGreaterOrEqual 2
+        $dialog | Should -Match '& \$ctx\.Reload'
+        $dialog | Should -Match 'Stop-SuiteBgWork -Handle \$dlgState\.Write -Discard'
+        $dialog | Should -Match 'Close-SuiteBgRunspace -Runspace \$dlgState\.WriteRunspace'
     }
 }
