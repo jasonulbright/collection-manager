@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Use ConfigMgr terms in the window text, the README and the guide: for example, write SMS Provider and the Configuration Manager console, and say select in the steps.
+- Use ConfigMgr terms in the window text, the README and the guide. For example, write SMS Provider and Configuration Manager console, and write select in the steps.
 - Correct the guide: the message next to the WQL buttons is `Connect to the site first.`
 
 ## [2026.11.18.0031] - 2026-11-18

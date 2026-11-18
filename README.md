@@ -25,7 +25,7 @@ The [user guide](docs/index.md) walks every view, dialog and setting with images
 ## Quick Start
 
 1. Download the release zip and extract it to a working folder.
-2. Right-click `start-collectionmanager.ps1` -> **Run with PowerShell**, or from a PowerShell prompt:
+2. Right-click `start-collectionmanager.ps1`, and then select **Run with PowerShell**. Or run it from a PowerShell prompt:
 
    ```powershell
    powershell -ExecutionPolicy Bypass -File start-collectionmanager.ps1
@@ -35,30 +35,30 @@ The [user guide](docs/index.md) walks every view, dialog and setting with images
 
 ## Layout
 
-The shell uses a sidebar layout with three views and an Options modal:
+The shell uses a sidebar layout with three views and an Options dialog:
 
 - **Collections** -- master-detail grid of every device collection: Name, ID, Member Count, Limiting Collection, Refresh Type, Comment. Detail panel tabs: Properties, Direct Members, Query Rules, Include Rules, Exclude Rules. Filter by membership shape (Built-in / Custom / Empty / Has direct members / Has query rules) or free text.
-- **WQL Editor** -- open one collection by ID or use the tree after a full refresh. Pick a rule, edit the WQL in the monospace editor, select **Validate Query** to check the syntax by using `Invoke-CMWmiQuery`, and select **Preview Results** to see how many devices match. Select **Add Rule**, **Update Rule**, or **Remove...** to change the rules.
+- **WQL Editor** -- open one collection by ID or use the tree after a full refresh. Select a rule, edit the WQL in the monospace editor, select **Validate Query** to check the syntax by using `Invoke-CMWmiQuery`, and select **Preview Results** to see how many devices match. Select **Add Rule**, **Update Rule**, or **Remove...** to change the rules.
 - The WQL Editor's **Site Queries** tab lists queries already saved in the Configuration Manager site. Load one into the editor, save a new reusable query, update the selected saved query, or delete it from the site.
-- **Templates** -- two tabs (Operational, Parameterized). Pick a template; for parameterized ones, fill in the parameters and watch the expanded WQL update live. Then **Copy to WQL Editor** for hand-tuning, or **Apply to Collection** to push the rule onto a target collection.
+- **Templates** -- two tabs (Operational, Parameterized). Select a template; for parameterized ones, fill in the parameters and watch the expanded WQL update live. Then **Copy to WQL Editor** for hand-tuning, or **Apply to Collection** to push the rule onto a target collection.
 - **Footer** -- the status text on the left and the site on the right, for example `Site MCM`, a middle dot, and `cm01.contoso.com`. The footer is read-only. Select the site text to open Options. You change the site code and the SMS Provider only in **Options**.
 
 ## Workflows
 
 ### Create or copy a collection
 
-1. Connect to the site, then select **Collections** -> **New Collection**. All Systems is the default limiting collection; use Browse after opening a collection by ID or loading the full inventory to choose another. Select **Create**.
+1. Connect to the site, then select **Collections** > **New Collection**. All Systems is the default limiting collection; use Browse after opening a collection by ID or loading the full inventory to choose another. Select **Create**.
 2. To clone an existing one: select the source row, select **Copy...**, name the clone, and select **Copy**.
 
 ### Edit direct membership
 
 1. Select a collection on the **Collections** view.
-2. Select **Edit Membership...** to open the modal: add devices by name (auto-resolves Resource ID), remove selected members in bulk with confirmation.
+2. Select **Edit Membership...** to open the dialog: add devices by name (auto-resolves Resource ID), remove selected members in bulk with confirmation.
 
 ### Author a new WQL rule
 
 1. Connect to the site and switch to **WQL Editor** view.
-2. Enter a collection ID and select **Open by ID**, or pick a target from the tree after a full refresh.
+2. Enter a collection ID and select **Open by ID**, or select a target from the tree after a full refresh.
 3. Type or paste the WQL. Select **Validate Query** to check the syntax.
 4. Select **Preview Results** to count matches.
 5. Type a rule name and select **Add Rule**.
@@ -67,20 +67,20 @@ The shell uses a sidebar layout with three views and an Options modal:
 
 1. Select **Connect Site**; this does not load the collection inventory.
 2. In **WQL Editor**, open the **Site Queries** tab and select **Refresh**.
-3. Select a saved query and select **Load to Editor**. Its WQL and site metadata fill the editor fields.
+3. Select a saved query, and then select **Load to Editor**. Its WQL and site metadata fill the editor fields.
 4. To use it in a collection, select the target collection on the **Collections** tab, enter a rule name, and select **Add Rule**.
 5. To save a new reusable site query, enter its name and select **Save as New**. To change a saved query, load it, edit its WQL or metadata, and select **Update Saved**. **Delete** removes the selected saved query from the site after confirmation.
 
 ### Apply a ready-made template
 
 1. Switch to **Templates** view -> **Operational** tab.
-2. Pick a template (for example, "Workstations | Windows 11 24H2"). The expanded WQL appears in the right pane.
-3. Select **Apply to Collection...**, pick a target, confirm the rule name, and select **Apply**.
+2. Select a template (for example, "Workstations | Windows 11 24H2"). The expanded WQL appears in the right pane.
+3. Select **Apply to Collection...**, select a target, confirm the rule name, and select **Apply**.
 
 ### Use a parameterized template
 
 1. **Templates** view -> **Parameterized** tab.
-2. Pick a template (for example, "Software Installed by Name").
+2. Select a template (for example, "Software Installed by Name").
 3. Fill in the parameters (for example, SoftwareName = `7-Zip`). The expanded WQL updates live.
 4. **Apply to Collection...** or **Copy to WQL Editor** for further tuning.
 

@@ -37,7 +37,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.Build = '{BuildNumber}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "For example, '10.0.26200' for Win11 25H2", "DefaultValue": "" }
+      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "For example, '10.0.26200' for Windows 11 25H2", "DefaultValue": "" }
     ]
   },
   {
