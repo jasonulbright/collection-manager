@@ -166,6 +166,7 @@
             <Style x:Key="GridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource MahApps.Styles.DataGridColumnHeader}">
                 <Setter Property="Padding" Value="6,0,6,0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
             </Style>
 
             <!-- A disabled input is exempt from 4.5:1 text contrast (WCAG 1.4.3). It must look dimmed, so the window test requires it.
