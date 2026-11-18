@@ -7,7 +7,7 @@
     PowerShellVersion = '5.1'
 
     FunctionsToExport = @(
-        # Logging and CM connection come from the vendored SuiteCommon
+        # Logging and ConfigMgr connection come from the vendored SuiteCommon
         # module (Lib\SuiteCommon), imported globally by the root module.
 
         # Collection Queries

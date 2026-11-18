@@ -17,7 +17,7 @@ The same as [Capture the images again](capture-images.md).
 ## Steps
 
 1. Run the capture command with the `-OutDir` parameter.
-2. Read the `steps-guide.run.log` file in that folder. Each `SAMPLE` line has the background color, the text color and the contrast ratio.
+2. Open the `steps-guide.run.log` file in that folder. Each `SAMPLE` line has the background color, the text color and the contrast ratio.
 3. Open the images that this page shows and compare them with the colors.
 
 ## Colors read from the screen

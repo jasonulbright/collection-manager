@@ -27,8 +27,8 @@ None.
 
 ## Steps
 
-1. Read the log pane. It names the cause of most problems.
-2. Read the session log in `Logs`.
+1. View the log pane. It names the cause of most problems.
+2. Open the `Logs` folder and view the session log.
 3. Do the fix of the table.
 
 ## Limits

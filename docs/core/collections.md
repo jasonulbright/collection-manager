@@ -20,7 +20,7 @@ Use it to find a collection, to read its rules and to create or change a collect
 ### Read a collection
 
 1. Select **Refresh**, then select a row.
-2. Read the **Properties** tab. It shows the name, the ID, the member count, the limiting collection, the refresh type, whether the collection is built-in, and the comment.
+2. Review the **Properties** tab. It shows the name, the ID, the member count, the limiting collection, the refresh type, whether the collection is built-in, and the comment.
 
 ![The properties of a built-in collection](../images/collection-properties.png)
 
@@ -121,7 +121,7 @@ A built-in collection has an ID that starts with `SMS`. The tool does not change
 |---|---|---|
 | `Edit Membership: built-in collections are read-only.` | The collection is built-in. | Select a custom collection. |
 | `Remove: built-in collection <ID> cannot be deleted.` | The same. | Select a custom collection. |
-| `Add direct member: no device was added for "<name>".` | The name does not match one device, or the lookup failed. | Type the exact device name. Read the log. |
+| `Add direct member: no device was added for "<name>".` | The name does not match one device, or the lookup failed. | Type the exact device name. Review the log. |
 
 ## Links
 

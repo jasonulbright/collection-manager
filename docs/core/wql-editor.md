@@ -87,9 +87,9 @@ This guide read the list. It did not use the buttons that save, update or delete
 | Message or symptom | Cause | Fix |
 |---|---|---|
 | The tree is empty. | No full refresh has run. | Select **Refresh** on the Collections view, or use **Open by ID**. |
-| `WQL validate:` shows an error. | The query has a syntax error, or the SMS Provider is not available, or the account has no access. | Read the error. Correct the query only when the error names the query. Otherwise check the connection and the permissions. |
-| The text next to the buttons shows `Refresh first to establish a CM connection.` | No connection is open. | Select **Connect Site** or **Refresh** and try again. |
-| The text next to the buttons shows `Preview failed:` | The site could not run the query. | Read the text after the colon and the log. |
+| `WQL validate:` shows an error. | The query has a syntax error, or the SMS Provider is not available, or the account has no access. | Review the error. Correct the query only when the error names the query. Otherwise check the connection and the permissions. |
+| The text next to the buttons shows `Connect to the site first.` | No connection is open. | Select **Connect Site** or **Refresh** and try again. |
+| The text next to the buttons shows `Preview failed:` | The site could not run the query. | Review the text after the colon and the log. |
 
 ## Links
 

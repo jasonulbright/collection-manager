@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Import this module to get:
-      - Structured logging and CM site connection management via the
+      - Structured logging and ConfigMgr site connection management by using the
         vendored SuiteCommon module (Lib\SuiteCommon)
       - Device collection queries and CRUD operations
       - Membership management (direct, query, include, exclude rules)
@@ -21,7 +21,7 @@
 # ---------------------------------------------------------------------------
 # Shared core (vendored SuiteCommon)
 # ---------------------------------------------------------------------------
-# Logging (Initialize-Logging, Write-Log), CM connection (Connect-CMSite,
+# Logging (Initialize-Logging, Write-Log), ConfigMgr connection (Connect-CMSite,
 # Disconnect-CMSite, Test-CMConnection, Get-CMConnectionInfo), and settings
 # persistence come from the vendored copy at Lib\SuiteCommon\. -Global makes
 # the functions resolvable from the shell script and from this module alike;
@@ -34,7 +34,7 @@ if (-not (Get-Module SuiteCommon)) {
 # ---------------------------------------------------------------------------
 # Folder hierarchy (SMS_ObjectContainerNode + SMS_ObjectContainerItem)
 # ---------------------------------------------------------------------------
-# The CM console's left-tree folders for device collections live in
+# The Configuration Manager console's left-tree folders for device collections live in
 # SMS_ObjectContainerNode rows where ObjectType = 5000. Each collection's
 # folder placement lives in SMS_ObjectContainerItem (InstanceKey =
 # CollectionID, ObjectType = 5000, ContainerNodeID = folder). Collections
@@ -667,7 +667,7 @@ function Invoke-CollectionEvaluation {
 function Test-WqlQuery {
     <#
     .SYNOPSIS
-        Validates a WQL query expression via Invoke-CMWmiQuery.
+        Validates a WQL query expression by using Invoke-CMWmiQuery.
     .DESCRIPTION
         Returns a PSCustomObject with IsValid, ResultCount, and ErrorMessage.
     #>
