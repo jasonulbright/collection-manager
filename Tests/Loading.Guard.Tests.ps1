@@ -47,3 +47,23 @@ Describe 'Member loads stay off the UI thread' {
         $suite | Should -Match '\[switch\]\$Discard'
     }
 }
+
+Describe 'The load can be cancelled' {
+    It 'has a Cancel button on the progress overlay and the overlay takes the click' {
+        $script:XamlText = Get-Content -LiteralPath (Join-Path $script:Root 'MainWindow.xaml') -Raw
+        $script:XamlText | Should -Match '<Button x:Name="btnCancelWork" Content="Cancel" Style="\{StaticResource SquareInlineButtonStyle\}"'
+        $script:XamlText | Should -Match '<Border x:Name="progressOverlay"\s+Visibility="Collapsed"\s+IsHitTestVisible="True"'
+    }
+
+    It 'stops the work, drops the runspace and gives the window back when the button is clicked' {
+        $text = Get-Content -LiteralPath $script:ScriptPath -Raw
+        $text | Should -Match '\$btnCancelWork\s+= \$window\.FindName\(''btnCancelWork''\)'
+        $text | Should -Match '\$btnCancelWork\.Add_Click\(\{ Invoke-CancelWork \}\)'
+        $fn = Get-FunctionText -Name 'Invoke-CancelWork'
+        $fn | Should -Match "\`$script:BgState\['Cancel'\] = \`$true"
+        $fn | Should -Match 'Dispose-BgWork'
+        $fn | Should -Match 'Close-SuiteBgRunspace -Runspace \$script:BgRunspace'
+        $fn | Should -Match '\$progressOverlay\.Visibility = \[System\.Windows\.Visibility\]::Collapsed'
+        $fn | Should -Not -Match $script:CmCall
+    }
+}

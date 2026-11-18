@@ -13,6 +13,7 @@
 
 - Add density and vacant-area window tests, and a guard for uncaptured guide images.
 - Add the Title Case guard (D-12) to the theme guard tests, and drop the stale inactive title bar note from the test plan.
+- Add a Cancel button to the progress overlay of the load: it stops the running read without blocking the window, drops the background runspace and leaves the data of the last load as it was.
 
 ### Fixed
 

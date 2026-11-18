@@ -210,6 +210,7 @@ $btnCopyToWqlEditor          = $window.FindName('btnCopyToWqlEditor')
 $btnApplyTemplate            = $window.FindName('btnApplyTemplate')
 
 $progressOverlay  = $window.FindName('progressOverlay')
+$btnCancelWork     = $window.FindName('btnCancelWork')
 $txtProgressTitle = $window.FindName('txtProgressTitle')
 $txtProgressStep  = $window.FindName('txtProgressStep')
 
@@ -1079,6 +1080,26 @@ function Dispose-BgWork {
     $script:BgPowerShell = $null
     $script:BgInvokeHandle = $null
 }
+
+# Cancel stops the running load. The cancel flag lets a worker that reads it stop at its next step; the pipeline is stopped
+# without blocking the window, and the background runspace is dropped, so that the next load never queues behind a call
+# that is stuck on an unresponsive provider.
+function Invoke-CancelWork {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Stops ephemeral background work only.')]
+    param()
+    if (-not $script:BgPowerShell) { return }
+    if ($script:BgState) { $script:BgState['Cancel'] = $true }
+    Dispose-BgWork
+    Close-SuiteBgRunspace -Runspace $script:BgRunspace
+    $script:BgRunspace = $null
+    $script:BgState = $null
+    $script:IsConnected = $false
+    $progressOverlay.Visibility = [System.Windows.Visibility]::Collapsed
+    $btnConnect.IsEnabled = $true
+    $btnRefresh.IsEnabled = $true
+    Add-LogLine 'Cancelled. Nothing was changed.'
+    Set-StatusText 'Cancelled.'
+}$btnCancelWork.Add_Click({ Invoke-CancelWork })
 
 function Invoke-ConnectSite {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Starts a background Configuration Manager connection check only.')]
