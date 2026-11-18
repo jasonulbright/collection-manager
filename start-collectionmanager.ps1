@@ -2432,7 +2432,7 @@ function Update-WqlCollectionRuleState {
 }
 
 function Add-NewCollectionToState {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Adds the collection just created to the local view without scanning the site.')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Adds the new collection to the local view without scanning the site.')]
     param([Parameter(Mandatory)]$CreatedInfo)
 
     $created = $CreatedInfo.Result

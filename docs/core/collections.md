@@ -17,7 +17,7 @@ Use it to find a collection, to read its rules and to create or change a collect
 
 ## Steps
 
-### Read a collection
+### View a collection
 
 1. Select **Refresh**, then select a row.
 2. Review the **Properties** tab. It shows the name, the ID, the member count, the limiting collection, the refresh type, whether the collection is built-in, and the comment.
