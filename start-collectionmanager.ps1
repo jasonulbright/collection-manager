@@ -1226,8 +1226,8 @@ function Invoke-Refresh {
             $folders   = @()
             $folderMap = @{}
             try {
-                $folders   = @(Get-CMCollectionFolderTree -SMSProvider $SMSProvider -SiteCode $SiteCode)
-                $folderMap = Get-CMCollectionFolderMap -SMSProvider $SMSProvider -SiteCode $SiteCode
+                $folders   = @(Invoke-SuiteCMRead -Description 'Folder hierarchy' -ScriptBlock { Get-CMCollectionFolderTree -SMSProvider $SMSProvider -SiteCode $SiteCode })
+                $folderMap = Invoke-SuiteCMRead -Description 'Folder map' -ScriptBlock { Get-CMCollectionFolderMap -SMSProvider $SMSProvider -SiteCode $SiteCode }
             } catch {
                 # Non-fatal: if CIM is blocked, picker degrades to a flat root list.
                 $folders = @()
@@ -1235,7 +1235,7 @@ function Invoke-Refresh {
             }
 
             $State.Step = 'Loading device collections...'
-            $collections = @(Get-AllDeviceCollections)
+            $collections = @(Invoke-SuiteCMRead -Description 'Device collections' -ScriptBlock { Get-AllDeviceCollections })
 
             # Annotate each collection with its FolderID (0 = tree root).
             $collections = @($collections | ForEach-Object {
@@ -1435,6 +1435,15 @@ function Invoke-LoadTemplates {
     }
 }
 
+# The member loads run in their own background runspace, so that a refresh and a member load never wait for each other.
+function Get-MemberRunspace {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Lazy-init of the member-load runspace; idempotent.')]
+    param()
+    if (-not $script:MemberRunspace -or $script:MemberRunspace.RunspaceStateInfo.State -ne 'Opened') {
+        $script:MemberRunspace = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
+    }
+    return $script:MemberRunspace
+}
 function Invoke-LoadDirectMembers {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Posts a one-shot member fetch to the bg runspace.')]
     param([Parameter(Mandatory)][string]$CollectionID)
@@ -1444,47 +1453,35 @@ function Invoke-LoadDirectMembers {
         return
     }
 
-    Initialize-BgRunspace
-
-    $local = [hashtable]::Synchronized(@{ Done = $false; Result = $null; ErrorMsg = $null })
-    $ps = [powershell]::Create()
-    $ps.Runspace = $script:BgRunspace
-    [void]$ps.AddScript({
-        param($CollId, $State)
-        try {
-            $State.Result = @(Get-CollectionMembers -CollectionId $CollId)
-        } catch {
-            $State.ErrorMsg = $_.Exception.Message
-        } finally {
-            $State.Done = $true
-        }
-    }).AddArgument($CollectionID).AddArgument($local)
-
-    $handle = $ps.BeginInvoke()
-
-    $timer = New-Object System.Windows.Threading.DispatcherTimer
-    $timer.Interval = [TimeSpan]::FromMilliseconds(120)
-    $timer.Tag = @{ ps = $ps; handle = $handle; state = $local; collId = $CollectionID }
-    $timer.Add_Tick({
-        $info = $this.Tag
-        if ($info.state.Done) {
-            $this.Stop()
-            try { [void]$info.ps.EndInvoke($info.handle) } catch { $null = $_ }
-            try { $info.ps.Dispose() } catch { $null = $_ }
-            if ($info.state.ErrorMsg) {
-                Add-LogLine ('Direct members load failed: {0}' -f $info.state.ErrorMsg)
-                return
-            }
-            # Only apply if the user hasn't moved on to a different collection.
-            if ([string]$gridDirectMembers.Tag -eq [string]$info.collId) {
-                $gridDirectMembers.ItemsSource = @($info.state.Result)
-                Add-LogLine ('Loaded {0} direct members for {1}.' -f @($info.state.Result).Count, $info.collId)
+    # A new load discards the one that is still running. The load reads the members in ResourceID ranges in the
+    # background runspace (retry of transient faults, partial data and a note for a range that fails for good) and the
+    # grid fills from a timer, so the window stays usable on a collection of 50,000 members.
+    if ($script:MemberLoad) { $script:BgGraveyard = @(Stop-SuiteBgWork -Handle $script:MemberLoad -Discard -Graveyard $script:BgGraveyard); $script:MemberLoad = $null }
+    $rows = New-Object 'System.Collections.ObjectModel.ObservableCollection[object]'
+    $gridDirectMembers.ItemsSource = $rows
+    $collId = $CollectionID
+    $script:MemberLoad = Start-SuiteBgWork -Runspace (Get-MemberRunspace) `
+        -ArgumentList $CollectionID, $global:Prefs.SMSProvider, ('root\sms\site_' + $global:Prefs.SiteCode) `
+        -ScriptBlock { param($State, $Id, $Provider, $Namespace) Read-SuiteCollectionMember -State $State -CollectionId $Id -ComputerName $Provider -Namespace $Namespace } `
+        -OnItem {
+            param($chunk, $state)
+            if ([string]$gridDirectMembers.Tag -ne [string]$state['CollectionId']) { return }
+            foreach ($m in $chunk) { $state['Rows'].Add($m) }
+            Set-StatusText ([string]$state['Progress'])
+        } `
+        -OnDone {
+            param($state)
+            foreach ($note in @($state['Notes'])) { Add-LogLine ('Direct members: {0}' -f $note) }
+            if ($state['Error']) { Add-LogLine ('Direct members load failed: {0}' -f $state['Error']); return }
+            if ($state['Cancelled']) { return }
+            if ([string]$gridDirectMembers.Tag -eq [string]$state['CollectionId']) {
+                Add-LogLine ('Loaded {0} direct members for {1}.' -f $state['Rows'].Count, $state['CollectionId'])
             }
         }
-    })
-    $timer.Start()
+    # The callbacks read their context from the state of the work (they run on the UI thread, in this script's scope).
+    $script:MemberLoad.State['Rows'] = $rows
+    $script:MemberLoad.State['CollectionId'] = $collId
 }
-
 $btnConnect.Add_Click({ Invoke-ConnectSite })
 $btnRefresh.Add_Click({ Invoke-Refresh })
 
@@ -2097,15 +2094,40 @@ function Show-EditMembershipDialog {
 
     $txtCollName.Text = ('Direct members: {0} ({1})' -f $Collection.Name, $Collection.CollectionID)
 
+    # The member list loads in the background (own runspace, ResourceID ranges, retry, cancel on close). The window never
+    # waits for a Configuration Manager call. The state lives in a hashtable so that the handlers can change it.
+    $dlgState = @{ Load = $null; Runspace = $null }
     $reload = {
         try {
-            $members = @(Get-CollectionMembers -CollectionId $Collection.CollectionID)
-            $gridMembers.ItemsSource = $members
+            if ($dlgState.Load) { $null = Stop-SuiteBgWork -Handle $dlgState.Load -Discard }
+            if (-not $dlgState.Runspace -or $dlgState.Runspace.RunspaceStateInfo.State -ne 'Opened') {
+                $dlgState.Runspace = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
+            }
+            $rows = New-Object 'System.Collections.ObjectModel.ObservableCollection[object]'
+            $gridMembers.ItemsSource = $rows
+            $btnReloadMembers.IsEnabled = $false
+            $dlgState.Load = Start-SuiteBgWork -Runspace $dlgState.Runspace `
+                -ArgumentList $Collection.CollectionID, $global:Prefs.SMSProvider, ('root\sms\site_' + $global:Prefs.SiteCode) `
+                -ScriptBlock { param($State, $Id, $Provider, $Namespace) Read-SuiteCollectionMember -State $State -CollectionId $Id -ComputerName $Provider -Namespace $Namespace } `
+                -OnItem { param($chunk, $state) foreach ($m in $chunk) { $state['Rows'].Add($m) } } `
+                -OnDone {
+                    param($state)
+                    $state['Button'].IsEnabled = $true
+                    foreach ($note in @($state['Notes'])) { Add-LogLine ('Edit Membership: {0}' -f $note) }
+                    if ($state['Error']) { Add-LogLine ('Edit Membership: load failed: {0}' -f $state['Error']) }
+                }
+            $dlgState.Load.State['Rows'] = $rows
+            $dlgState.Load.State['Button'] = $btnReloadMembers
         } catch {
+            $btnReloadMembers.IsEnabled = $true
             Add-LogLine ('Edit Membership: load failed: {0}' -f $_.Exception.Message)
         }
     }
     & $reload
+    $dlg.Add_Closed({
+        if ($dlgState.Load) { $null = Stop-SuiteBgWork -Handle $dlgState.Load -Discard }
+        Close-SuiteBgRunspace -Runspace $dlgState.Runspace
+    })
 
     $btnAddDevice.Add_Click({
         $name = ([string]$txtAddDevice.Text).Trim()
@@ -2669,6 +2691,7 @@ function Show-OptionsDialog {
         if ($connectionChanged) {
             Dispose-BgWork
             Close-SuiteBgRunspace -Runspace $script:BgRunspace
+    Close-SuiteBgRunspace -Runspace $script:MemberRunspace
             $script:BgRunspace = $null
             $script:BgState           = $null
             $script:IsConnected = $false
@@ -2721,6 +2744,7 @@ $window.Add_Closing({
     Save-WindowState -Window $window -Path $global:WindowStatePath -ExtraState @{ ActiveView = $script:ActiveView }
     Dispose-BgWork
     Close-SuiteBgRunspace -Runspace $script:BgRunspace
+    Close-SuiteBgRunspace -Runspace $script:MemberRunspace
 })
 
 $window.Add_Loaded({
