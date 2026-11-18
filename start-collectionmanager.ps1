@@ -2006,6 +2006,48 @@ function Show-CopyCollectionDialog {
     return $script:CopyCollResult
 }
 
+# Add and remove of direct members run in the background too: a runspace of its own for the dialog, one write at a time, the
+# dialog buttons off while it runs. The window never waits for a Configuration Manager call. Kind is 'Add' or 'Remove'.
+function Start-DirectMemberWrite {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Starts ephemeral background work that the user asked for with a button.')]
+    param(
+        [Parameter(Mandatory)][hashtable]$DlgState,
+        [Parameter(Mandatory)][ValidateSet('Add', 'Remove')][string]$Kind,
+        [Parameter(Mandatory)][string]$CollectionId,
+        [Parameter(Mandatory)][object[]]$Argument,
+        [Parameter(Mandatory)]$Button,
+        [Parameter(Mandatory)][scriptblock]$OnDone,
+        [hashtable]$Context = @{}
+    )
+    if ($DlgState.Write) { return }
+    if (-not $DlgState.WriteRunspace -or $DlgState.WriteRunspace.RunspaceStateInfo.State -ne 'Opened') {
+        $DlgState.WriteRunspace = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
+    }
+    $work = if ($Kind -eq 'Add') {
+        {
+            param($State, $Provider, $Site, $CollectionId, $Name)
+            if (-not (Test-CMConnection)) { if (-not (Connect-CMSite -SiteCode $Site -SMSProvider $Provider)) { throw 'The background session could not connect to the site.' } }
+            $State['Result'] = [bool](Add-DirectMember -CollectionId $CollectionId -DeviceName $Name)
+        }
+    } else {
+        {
+            param($State, $Provider, $Site, $CollectionId, $Ids)
+            if (-not (Test-CMConnection)) { if (-not (Connect-CMSite -SiteCode $Site -SMSProvider $Provider)) { throw 'The background session could not connect to the site.' } }
+            $done = New-Object System.Collections.ArrayList
+            foreach ($id in $Ids) {
+                if ($State['Cancel']) { break }
+                try { Remove-DirectMember -CollectionId $CollectionId -ResourceId ([int]$id); [void]$done.Add([int]$id) }
+                catch { [void]$State['Notes'].Add(('{0}|{1}' -f $id, $_.Exception.Message)) }
+            }
+            $State['Result'] = @($done)
+        }
+    }
+    foreach ($b in @($Button)) { $b.IsEnabled = $false }
+    $DlgState.Write = Start-SuiteBgWork -Runspace $DlgState.WriteRunspace -ScriptBlock $work -OnDone $OnDone `
+        -ArgumentList (@([string]$global:Prefs.SMSProvider, [string]$global:Prefs.SiteCode, $CollectionId) + $Argument)
+    $DlgState.Write.State['Context'] = $Context
+    $DlgState.Write.State['Button'] = @($Button)
+}
 function Show-EditMembershipDialog {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Modal dialog show / dispose; reads as a single action.')]
     param([Parameter(Mandatory)]$Collection)
@@ -2117,7 +2159,7 @@ function Show-EditMembershipDialog {
 
     # The member list loads in the background (own runspace, ResourceID ranges, retry, cancel on close). The window never
     # waits for a Configuration Manager call. The state lives in a hashtable so that the handlers can change it.
-    $dlgState = @{ Load = $null; Runspace = $null }
+    $dlgState = @{ Load = $null; Runspace = $null; Write = $null; WriteRunspace = $null }
     $reload = {
         try {
             if ($dlgState.Load) { $null = Stop-SuiteBgWork -Handle $dlgState.Load -Discard }
@@ -2147,22 +2189,27 @@ function Show-EditMembershipDialog {
     & $reload
     $dlg.Add_Closed({
         if ($dlgState.Load) { $null = Stop-SuiteBgWork -Handle $dlgState.Load -Discard }
+        if ($dlgState.Write) { $null = Stop-SuiteBgWork -Handle $dlgState.Write -Discard }
         Close-SuiteBgRunspace -Runspace $dlgState.Runspace
+        Close-SuiteBgRunspace -Runspace $dlgState.WriteRunspace
     })
 
     $btnAddDevice.Add_Click({
         $name = ([string]$txtAddDevice.Text).Trim()
         if (-not $name) { return }
-        try {
-            if (Add-DirectMember -CollectionId $Collection.CollectionID -DeviceName $name) {
-                Add-LogLine ('Added "{0}" to {1}.' -f $name, $Collection.Name)
-                $txtAddDevice.Text = ''
-                & $reload
+        Start-DirectMemberWrite -DlgState $dlgState -Kind 'Add' -CollectionId $Collection.CollectionID -Argument @($name) -Button @($btnAddDevice, $btnRemoveSel, $btnReloadMembers) -Context @{ Name = $name; CollectionName = $Collection.Name; Reload = $reload; DlgState = $dlgState; Input = $txtAddDevice } -OnDone {
+            param($state)
+            $ctx = $state['Context']
+            foreach ($b in $state['Button']) { $b.IsEnabled = $true }
+            $ctx.DlgState.Write = $null
+            if ($state['Error']) { Add-LogLine ('Add direct member failed: {0}' -f $state['Error']); return }
+            if ($state['Result']) {
+                Add-LogLine ('Added "{0}" to {1}.' -f $ctx.Name, $ctx.CollectionName)
+                $ctx.Input.Text = ''
+                & $ctx.Reload
             } else {
-                Add-LogLine ('Add direct member: no device was added for "{0}". The name must match one device exactly. See the log for the reason.' -f $name)
+                Add-LogLine ('Add direct member: no device was added for "{0}". The name must match one device exactly. See the log for the reason.' -f $ctx.Name)
             }
-        } catch {
-            Add-LogLine ('Add direct member failed: {0}' -f $_.Exception.Message)
         }
     })
 
@@ -2172,17 +2219,19 @@ function Show-EditMembershipDialog {
         if (-not (Show-ConfirmDialog -Title 'Remove Members' -Message ("Remove $(@($rows).Count) selected member(s) from $($Collection.Name)?") -Owner $window)) {
             return
         }
-        foreach ($r in $rows) {
-            try {
-                Remove-DirectMember -CollectionId $Collection.CollectionID -ResourceId ([int]$r.ResourceID)
-                Add-LogLine ('Removed "{0}" (ResourceID {1}) from {2}.' -f $r.Name, $r.ResourceID, $Collection.Name)
-            } catch {
-                Add-LogLine ('Remove failed for ResourceID {0}: {1}' -f $r.ResourceID, $_.Exception.Message)
-            }
+        $names = @{}
+        foreach ($r in $rows) { $names[[string][int]$r.ResourceID] = [string]$r.Name }
+        Start-DirectMemberWrite -DlgState $dlgState -Kind 'Remove' -CollectionId $Collection.CollectionID -Argument @(,@($rows | ForEach-Object { [int]$_.ResourceID })) -Button @($btnAddDevice, $btnRemoveSel, $btnReloadMembers) -Context @{ Names = $names; CollectionName = $Collection.Name; Reload = $reload; DlgState = $dlgState } -OnDone {
+            param($state)
+            $ctx = $state['Context']
+            foreach ($b in $state['Button']) { $b.IsEnabled = $true }
+            $ctx.DlgState.Write = $null
+            if ($state['Error']) { Add-LogLine ('Remove failed: {0}' -f $state['Error']); & $ctx.Reload; return }
+            foreach ($id in @($state['Result'])) { Add-LogLine ('Removed "{0}" (ResourceID {1}) from {2}.' -f $ctx.Names[[string]$id], $id, $ctx.CollectionName) }
+            foreach ($note in @($state['Notes'])) { $p = ([string]$note) -split '\|', 2; Add-LogLine ('Remove failed for ResourceID {0}: {1}' -f $p[0], $p[1]) }
+            & $ctx.Reload
         }
-        & $reload
     })
-
     $btnReloadMembers.Add_Click({ & $reload })
     $btnClose.Add_Click({ $dlg.DialogResult = $false; $dlg.Close() })
 
