@@ -6,7 +6,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_ADD_REMOVE_PROGRAMS on SMS_G_System_ADD_REMOVE_PROGRAMS.ResourceID = SMS_R_System.ResourceId where SMS_G_System_ADD_REMOVE_PROGRAMS.DisplayName like '%{SoftwareName}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (e.g., 'Java', '7-Zip')", "DefaultValue": "" }
+      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (for example, 'Java', '7-Zip')", "DefaultValue": "" }
     ]
   },
   {
@@ -16,8 +16,8 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_ADD_REMOVE_PROGRAMS on SMS_G_System_ADD_REMOVE_PROGRAMS.ResourceID = SMS_R_System.ResourceId where SMS_G_System_ADD_REMOVE_PROGRAMS.DisplayName like '%{SoftwareName}%' and SMS_G_System_ADD_REMOVE_PROGRAMS.Version < '{MaxVersion}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (e.g., 'Java', '7-Zip')", "DefaultValue": "" },
-      { "Placeholder": "{MaxVersion}", "Label": "Maximum Version", "HelpText": "Devices below this version (e.g., '24.0')", "DefaultValue": "" }
+      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (for example, 'Java', '7-Zip')", "DefaultValue": "" },
+      { "Placeholder": "{MaxVersion}", "Label": "Maximum Version", "HelpText": "Devices below this version (for example, '24.0')", "DefaultValue": "" }
     ]
   },
   {
@@ -27,7 +27,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ResourceId not in (select SMS_G_System_ADD_REMOVE_PROGRAMS.ResourceID from SMS_G_System_ADD_REMOVE_PROGRAMS where SMS_G_System_ADD_REMOVE_PROGRAMS.DisplayName like '%{SoftwareName}%')",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (e.g., 'Java', '7-Zip')", "DefaultValue": "" }
+      { "Placeholder": "{SoftwareName}", "Label": "Software Name", "HelpText": "Partial match (for example, 'Java', '7-Zip')", "DefaultValue": "" }
     ]
   },
   {
@@ -37,7 +37,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.Build = '{BuildNumber}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "e.g., '10.0.26200' for Win11 25H2", "DefaultValue": "" }
+      { "Placeholder": "{BuildNumber}", "Label": "OS Build", "HelpText": "For example, '10.0.26200' for Win11 25H2", "DefaultValue": "" }
     ]
   },
   {
@@ -47,7 +47,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ClientVersion like '{VersionPattern}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{VersionPattern}", "Label": "Version Pattern", "HelpText": "e.g., '5.00.9152' for 2609", "DefaultValue": "" }
+      { "Placeholder": "{VersionPattern}", "Label": "Version Pattern", "HelpText": "For example, '5.00.9152' for 2609", "DefaultValue": "" }
     ]
   },
   {
@@ -57,7 +57,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Manufacturer like '%{Manufacturer}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{Manufacturer}", "Label": "Manufacturer", "HelpText": "e.g., 'Dell', 'HP', 'Lenovo'", "DefaultValue": "" }
+      { "Placeholder": "{Manufacturer}", "Label": "Manufacturer", "HelpText": "For example, 'Dell', 'HP', 'Lenovo'", "DefaultValue": "" }
     ]
   },
   {
@@ -67,7 +67,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_COMPUTER_SYSTEM.Model like '%{Model}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{Model}", "Label": "Model Name", "HelpText": "e.g., 'OptiPlex', 'ThinkPad'", "DefaultValue": "" }
+      { "Placeholder": "{Model}", "Label": "Model Name", "HelpText": "For example, 'OptiPlex', 'ThinkPad'", "DefaultValue": "" }
     ]
   },
   {
@@ -97,7 +97,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.SystemOUName = '{OUPath}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{OUPath}", "Label": "OU Distinguished Name", "HelpText": "e.g., 'CONTOSO.COM/WORKSTATIONS/FLOOR2'", "DefaultValue": "" }
+      { "Placeholder": "{OUPath}", "Label": "OU Distinguished Name", "HelpText": "For example, 'CONTOSO.COM/WORKSTATIONS/FLOOR2'", "DefaultValue": "" }
     ]
   },
   {
@@ -113,7 +113,7 @@
   {
     "Name": "Chassis Type",
     "Category": "Hardware",
-    "Description": "Finds devices matching specific chassis type codes (laptop, desktop, server, etc.)",
+    "Description": "Finds devices matching specific chassis type codes (laptop, desktop, server, and so on)",
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_SYSTEM_ENCLOSURE on SMS_G_System_SYSTEM_ENCLOSURE.ResourceID = SMS_R_System.ResourceId where SMS_G_System_SYSTEM_ENCLOSURE.ChassisTypes in ({ChassisTypes})",
     "LimitingCollection": "All Systems",
     "Parameters": [
@@ -155,7 +155,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.IPSubnets like '{Subnet}%'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{Subnet}", "Label": "IP Subnet", "HelpText": "e.g., '10.10.1'", "DefaultValue": "" }
+      { "Placeholder": "{Subnet}", "Label": "IP Subnet", "HelpText": "For example, '10.10.1'", "DefaultValue": "" }
     ]
   },
   {
@@ -165,7 +165,7 @@
     "Query": "select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System where SMS_R_System.ResourceDomainORWorkgroup = '{Domain}'",
     "LimitingCollection": "All Systems",
     "Parameters": [
-      { "Placeholder": "{Domain}", "Label": "Domain Name", "HelpText": "e.g., 'CONTOSO'", "DefaultValue": "" }
+      { "Placeholder": "{Domain}", "Label": "Domain Name", "HelpText": "For example, 'CONTOSO'", "DefaultValue": "" }
     ]
   },
   {

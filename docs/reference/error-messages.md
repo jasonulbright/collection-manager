@@ -18,14 +18,14 @@ None.
 
 | Message | Where | Cause | Fix |
 |---|---|---|---|
-| `Open Options to configure site code and SMS provider` | Status bar | The site code or the provider is empty. | Set both in **Options > Connection**. |
+| `Open Options to configure site code and SMS Provider` | Status bar | The site code or the provider is empty. | Set both in **Options > Connection**. |
 | `Refresh failed: Failed to connect to site <code> (provider <name>).` | Log | The console is not installed on this computer, or the provider name is wrong or not reachable, or `SMS_ADMIN_UI_PATH` does not point to the `bin\i386` folder of the console. | Check the provider name. Install the console. If it is installed, set `SMS_ADMIN_UI_PATH` to its `bin\i386` folder and start the tool again. |
-| `Refresh failed:` and `Refresh failed.` | Log, status bar | The tool could not connect or read. | Read the log line for the reason. |
+| `Refresh failed:` and `Refresh failed.` | Log, status bar | The tool could not connect or read. | Review the log line for the reason. |
 | `Edit Membership: built-in collections are read-only.` | Log | The collection is built-in. | Select a custom collection. |
 | `Remove: built-in collection <ID> cannot be deleted.` | Log | The same. | The same. |
 | `Add direct member: no device was added for "<name>".` | Log | The name does not match one device, or the lookup failed. | Type the exact device name. |
-| `WQL validate:` followed by an error | Log | The query has a syntax error, or the SMS Provider is not available, or the account has no access. | Read the error. Correct the query only when the error names the query. Otherwise check the connection and the permissions. |
-| `Refresh first to establish a CM connection.` | Text next to the WQL buttons | No connection is open. | Select **Connect Site** or **Refresh**. |
+| `WQL validate:` followed by an error | Log | The query has a syntax error, or the SMS Provider is not available, or the account has no access. | Review the error. Correct the query only when the error names the query. Otherwise check the connection and the permissions. |
+| `Connect to the site first.` | Text next to the WQL buttons | No connection is open. | Select **Connect Site** or **Refresh**. |
 
 The image shows **Refresh** on a computer without the console. The window stays open, the grid stays empty and the log names the cause.
 

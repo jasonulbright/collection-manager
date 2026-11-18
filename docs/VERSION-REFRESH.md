@@ -27,7 +27,7 @@ The tool carries no list for .NET, Edge, WinPE, ADK or SQL Server.
 4. Rename `Clients Version | Not Latest (<yymm>)` and change its build to the newest release.
 5. Change the example in `HelpText` in `Templates/parameterized-templates.json`.
 6. Update the template count. Search for the old count with `git grep` and change it in `README.md`, `docs/index.md`, `docs/core/templates.md` and the two Templates strings in `start-collectionmanager.ps1`.
-7. Run `Invoke-Checks.ps1` on a lab machine or in CI. `Tests/ShippedLists.Tests.ps1` fails when:
+7. Run `Invoke-Checks.ps1` on a lab computer or in CI. `Tests/ShippedLists.Tests.ps1` fails when:
    - a template field is missing,
    - a template names a build, version or channel that the reference table does not know,
    - a template build differs from the reference build,

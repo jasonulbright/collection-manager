@@ -23,7 +23,7 @@ Select **Options** in the sidebar.
 | Field | Meaning |
 |---|---|
 | **Site Code** | The site code, for example `MCM`. |
-| **SMS Provider FQDN** | The server with the SMS Provider role. The tool uses it for the PSDrive root. |
+| **SMS Provider FQDN** | The server with the SMS Provider role. The tool uses it as the root of the site drive. |
 
 ![The Connection page](../images/options-connection.png)
 

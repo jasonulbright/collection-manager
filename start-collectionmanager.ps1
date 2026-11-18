@@ -6,8 +6,8 @@
     Sidebar navigation across three views (Collections, WQL Editor, Templates),
     inline action bar (Refresh, filter, status filter, exports), modal dialogs
     for Options and per-collection actions, log drawer, and status bar. Status
-    conveyed via glyph at ThemeForeground (no row-color coloring). Site code
-    and SMS provider configured from the Options sidebar button.
+    shown by a glyph at ThemeForeground (no row-color coloring). Site code
+    and SMS Provider configured from the Options sidebar button.
 
     Requirements:
       - PowerShell 5.1
@@ -452,7 +452,7 @@ function Update-StatusBarSummary {
     if ($script:IsConnected -and $global:Prefs.SiteCode) {
         $parts += "Connected to $($global:Prefs.SiteCode)"
     } elseif (-not $global:Prefs.SiteCode -or -not $global:Prefs.SMSProvider) {
-        $parts += 'Open Options to configure site code and SMS provider'
+        $parts += 'Open Options to configure site code and SMS Provider'
     } else {
         $parts += 'Connect to the site, or refresh to load the collection inventory.'
     }
@@ -1106,8 +1106,8 @@ function Invoke-ConnectSite {
     param()
 
     if (-not $global:Prefs.SiteCode -or -not $global:Prefs.SMSProvider) {
-        Add-LogLine 'Connect: site code and SMS provider must be set in Options first.'
-        Set-StatusText 'Open Options to configure site code and SMS provider, then connect.'
+        Add-LogLine 'Connect: site code and SMS Provider must be set in Options first.'
+        Set-StatusText 'Open Options to configure site code and SMS Provider, then connect.'
         return
     }
 
@@ -1203,8 +1203,8 @@ function Invoke-Refresh {
     }
 
     if (-not $global:Prefs.SiteCode -or -not $global:Prefs.SMSProvider) {
-        Add-LogLine 'Refresh: site code and SMS provider must be set in Options first.'
-        Set-StatusText 'Open Options to configure site code and SMS provider, then refresh.'
+        Add-LogLine 'Refresh: site code and SMS Provider must be set in Options first.'
+        Set-StatusText 'Open Options to configure site code and SMS Provider, then refresh.'
         return
     }
 
@@ -1359,7 +1359,7 @@ function Invoke-Refresh {
                         }
                     } catch {
                         $script:IsConnected = $false
-                        Add-LogLine ('UI-thread CM connect: {0}' -f $_.Exception.Message)
+                        Add-LogLine ('UI-thread ConfigMgr connect: {0}' -f $_.Exception.Message)
                     }
                 }
                 $btnConnect.Content = if ($script:IsConnected) { 'Test Connection' } else { 'Connect Site' }
@@ -1429,7 +1429,7 @@ function Invoke-Refresh {
             } catch {
                 $script:IsConnected = $false
                 $btnConnect.Content = 'Connect Site'
-                Add-LogLine ('UI-thread CM connect: {0}' -f $_.Exception.Message)
+                Add-LogLine ('UI-thread ConfigMgr connect: {0}' -f $_.Exception.Message)
             }
 
             Add-LogLine ('Refresh complete: {0} collections.' -f @($script:RawCollections).Count)
@@ -1786,7 +1786,7 @@ function Show-NewCollectionDialog {
         <StackPanel Grid.Row="0">
             <TextBlock Text="Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <TextBox x:Name="txtName" FontSize="12" Padding="6,4,6,4"
-                     Controls:TextBoxHelper.Watermark="e.g. Workstations - Pilot Ring"/>
+                     Controls:TextBoxHelper.Watermark="For example, Workstations - Pilot Ring"/>
 
             <TextBlock Text="Limiting Collection" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             <Grid>
@@ -2682,12 +2682,12 @@ function Show-OptionsDialog {
                 <TextBlock x:Name="lblSiteCode" Text="Site Code" FontSize="14" FontWeight="Bold" Margin="0,4,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. P01" Width="120" HorizontalAlignment="Left"/>
+                         Controls:TextBoxHelper.Watermark="For example, P01" Width="120" HorizontalAlignment="Left"/>
                 <TextBlock x:Name="lblSmsProvider" Text="SMS Provider FQDN" FontSize="14" FontWeight="Bold" Margin="0,12,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
                 <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
-                         Controls:TextBoxHelper.Watermark="e.g. cm01.contoso.com"/>
-                <TextBlock Text="Used for the CM PSDrive root. Collection Manager performs both reads (Get-CMDeviceCollection) and writes (New / Set / Remove) -- the account running this app needs the matching CM permissions."
+                         Controls:TextBoxHelper.Watermark="For example, cm01.contoso.com"/>
+                <TextBlock Text="Used as the root of the site drive. Collection Manager reads (Get-CMDeviceCollection) and writes (New, Set, Remove). The account that runs this app needs the matching ConfigMgr permissions."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
             </StackPanel>
