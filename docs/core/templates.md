@@ -17,7 +17,7 @@ Use it to start from a tested query instead of a blank editor.
 
 ## Steps
 
-### Read an operational template
+### View an operational template
 
 1. Select **Templates** in the sidebar. The **Operational** tab shows the list.
 2. Type text in the filter box to filter by category or name.
