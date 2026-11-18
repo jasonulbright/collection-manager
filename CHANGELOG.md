@@ -7,6 +7,10 @@
 - Use ConfigMgr terms in the window text, the README and the guide. For example, write SMS Provider and Configuration Manager console, and write select in the steps.
 - Correct the guide: the message next to the WQL buttons is `Connect to the site first.`
 
+### Fixed
+
+- The guide capture tool stops only the processes that it started, by process id. It no longer stops PowerShell processes by command-line pattern, which could end the window of another session. A new guard test fails when a tool script stops a process by a pattern.
+
 ## [2026.11.18.0031] - 2026-11-18
 
 ## 13 changes: ranged member loads, Cancel, 1080p layout

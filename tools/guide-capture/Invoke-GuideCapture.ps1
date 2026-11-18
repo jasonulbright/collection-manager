@@ -62,6 +62,19 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
+# Stops the processes that earlier runs of this tool recorded in the ledger on the lab VM (process id and start time), and nothing else.
+# No process is stopped by a command-line pattern: another session may own a process that matches (vault: testing-policy, 'Process rules on a lab VM').
+$stopRecorded = @'
+param($ledger)
+if (Test-Path -LiteralPath $ledger) {
+    foreach ($line in @(Get-Content -LiteralPath $ledger)) {
+        $id, $ticks = $line -split '\|', 2
+        $p = Get-Process -Id ([int]$id) -ErrorAction SilentlyContinue
+        if ($p -and $p.Id -ne $PID -and $p.StartTime.Ticks -eq [long]$ticks) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+    }
+    Remove-Item -LiteralPath $ledger -Force -ErrorAction SilentlyContinue
+}
+'@
 $repo = (Resolve-Path (Join-Path $here '..\..')).Path
 $app = Split-Path $repo -Leaf
 $images = Join-Path $repo 'docs\images'
@@ -118,14 +131,14 @@ try {
     }
     foreach ($run in @(@{ Steps = 'steps-guide.ps1'; Prefs = $false }, @{ Steps = 'steps-console-missing.ps1'; Prefs = $true })) {
         $dest = $root
-        # Stop only the leftovers of an earlier capture: the capture runner and the copy of this app.
+        # Stop only the processes that an earlier capture recorded in its ledger, by process id.
         Invoke-Command $session {
-            param($d, $appName)
-            Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*$d\*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+            param($d)
+            & ([scriptblock]::Create($using:stopRecorded)) (Join-Path $d 'ui\run.pids')
             Start-Sleep -Seconds 2
             if (Test-Path $d) { Remove-Item $d -Recurse -Force }
             New-Item -ItemType Directory $d, (Join-Path $d 'ui') -Force | Out-Null
-        } -ArgumentList $dest, $app
+        } -ArgumentList $dest
         foreach ($item in Get-ChildItem -LiteralPath $repo -Force | Where-Object { $_.Name -notin '.git', '.claude', '.github', 'Logs', 'History', 'Reports', 'screenshots', 'TestResults', 'docs', 'Tests', 'tools' -and $_.Name -notlike '*.prefs.json' -and $_.Name -notlike '*.windowstate.json' -and $_.Name -notlike '*.lastscan.json' -and $_.Name -notlike '*.suppressions.json' -and $_.Name -notlike '*.local.*' -and $_.Name -notlike '*.png' }) {
             Copy-Item -LiteralPath $item.FullName -Destination "$dest\$($item.Name)" -ToSession $session -Recurse -Force
         }
@@ -194,6 +207,7 @@ try {
 }
 finally {
     # Each cleanup runs on its own, so that a failed cleanup cannot replace the original error.
+    try { Invoke-Command $session { param($t, $r) Stop-ScheduledTask $t -ErrorAction SilentlyContinue; & ([scriptblock]::Create($using:stopRecorded)) (Join-Path $r 'ui\run.pids') } -ArgumentList $taskName, $root } catch { Write-Warning "Stopping the capture processes failed: $($_.Exception.Message)" }
     try { Invoke-Command $session { param($t) Unregister-ScheduledTask $t -Confirm:$false -ErrorAction SilentlyContinue } -ArgumentList $taskName } catch { Write-Warning "Cleanup of the scheduled task failed: $($_.Exception.Message)" }
     try { Invoke-Command $session { param($r) Remove-Item $r -Recurse -Force -ErrorAction SilentlyContinue } -ArgumentList $root } catch { Write-Warning "Cleanup of $root failed: $($_.Exception.Message)" }
     # Remove the lock last, and only when this capture took it.
