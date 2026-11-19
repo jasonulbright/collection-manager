@@ -696,47 +696,116 @@ function Test-WqlQuery {
     }
 }
 
+function ConvertTo-WqlPreviewRows {
+    <#
+    .SYNOPSIS
+        Turns the objects that Invoke-CMWmiQuery returns into columns and rows for the preview grid.
+    .DESCRIPTION
+        A query on one class names its columns in PropertyNames. A query that joins classes returns one
+        item per class, and the columns are named Class.Property. Name and ResourceId come first, then the
+        other columns in alphabetical order. At most $MaxColumns columns are kept, so that a select * query
+        stays readable. A value that is a list becomes one text with commas. The rows are plain objects
+        with one text value per column.
+    #>
+    param(
+        [AllowNull()][object[]]$Results,
+        [int]$MaxColumns = 12
+    )
+
+    $items = @($Results | Where-Object { $null -ne $_ })
+    $columns = [System.Collections.Generic.List[string]]::new()
+    $getValue = {
+        param($Object, $Name)
+        $v = $null
+        try { $v = $Object.$Name } catch { $v = $null }
+        if ($null -eq $v) { return '' }
+        if ($v -is [datetime]) { return $v.ToString('yyyy-MM-dd HH:mm:ss') }
+        if ($v -is [System.Array]) { return (@($v | ForEach-Object { [string]$_ }) -join ', ') }
+        return [string]$v
+    }
+    # One pass over the first object decides the columns: a plain class or a join of classes.
+    $first = if ($items.Count -gt 0) { $items[0] } else { $null }
+    $plain = @()
+    if ($first -and $first.PSObject.Properties['PropertyNames'] -and $first.PropertyNames) { $plain = @($first.PropertyNames | ForEach-Object { [string]$_ }) }
+    $joined = [System.Collections.Generic.List[object]]::new()
+    if ($first -and $plain.Count -eq 0) {
+        foreach ($p in $first.PSObject.Properties) {
+            $inner = $null
+            try { $inner = @($p.Value)[0] } catch { $inner = $null }
+            if ($p.Name -like 'SMS_*' -and $inner -and $inner.PSObject.Properties['PropertyNames'] -and $inner.PropertyNames) {
+                foreach ($n in @($inner.PropertyNames)) { [void]$joined.Add([pscustomobject]@{ Column = ('{0}.{1}' -f $p.Name, $n); Class = $p.Name; Property = [string]$n }) }
+            }
+        }
+    }
+    if ($first -and $plain.Count -eq 0 -and $joined.Count -eq 0) {
+        # An object without a PropertyNames list: its own properties, without the provider plumbing.
+        $skip = 'SmsProviderObjectPath', 'ManagedObject', 'EmbeddedProperties', 'EmbeddedPropertyLists', 'OverridingObjectClass', 'RegMultiStringLists', 'SecurityVerbs'
+        $plain = @($first.PSObject.Properties | Where-Object { $_.Name -notin $skip -and $_.Name -notlike 'PS*' } | ForEach-Object { $_.Name })
+    }
+    if ($plain.Count -gt 0) {
+        $head = @($plain | Where-Object { $_ -in 'Name', 'ResourceId', 'ResourceID' } | Sort-Object { if ($_ -eq 'Name') { 0 } else { 1 } })
+        $rest = @($plain | Where-Object { $_ -notin $head } | Sort-Object)
+        foreach ($c in (@($head) + @($rest))) { if ($columns.Count -lt $MaxColumns) { [void]$columns.Add($c) } }
+    }
+    else {
+        $head = @($joined | Where-Object { $_.Property -in 'Name', 'ResourceId', 'ResourceID' })
+        $rest = @($joined | Where-Object { $_.Property -notin 'Name', 'ResourceId', 'ResourceID' })
+        foreach ($c in (@($head) + @($rest))) { if ($columns.Count -lt $MaxColumns) { [void]$columns.Add($c.Column) } }
+    }
+    $rows = foreach ($r in $items) {
+        $row = [ordered]@{}
+        foreach ($c in $columns) {
+            if ($plain.Count -gt 0) { $row[$c] = & $getValue $r $c }
+            else {
+                $meta = $joined | Where-Object { $_.Column -eq $c } | Select-Object -First 1
+                $inner = $null
+                try { $inner = @($r.($meta.Class))[0] } catch { $inner = $null }
+                $row[$c] = if ($inner) { & $getValue $inner $meta.Property } else { '' }
+            }
+        }
+        [pscustomobject]$row
+    }
+    return [pscustomobject]@{ Columns = @($columns); Rows = @($rows) }
+}
+
 function Invoke-WqlPreview {
     <#
     .SYNOPSIS
-        Runs a WQL query and returns the first N results for preview.
+        Runs a WQL query and returns the first rows for the preview grid.
+    .DESCRIPTION
+        Returns TotalCount (all rows the query returned), Columns, Rows (at most MaxResults) and ErrorMessage.
+        Results holds the same rows. A query that fails sets ErrorMessage and returns no rows; the caller
+        shows the message, never a count of zero.
     #>
     param(
         [Parameter(Mandatory)][string]$QueryExpression,
-        [int]$MaxResults = 50
+        [int]$MaxResults = 200
     )
 
-    Write-Log "Running WQL preview (max $MaxResults results)..."
+    Write-Log "Running WQL preview (max $MaxResults rows)..."
 
     try {
         $results = @(Invoke-CMWmiQuery -Query $QueryExpression -ErrorAction Stop)
+        $shown = if ($results.Count -gt $MaxResults) { @($results | Select-Object -First $MaxResults) } else { $results }
+        $table = ConvertTo-WqlPreviewRows -Results $shown
 
-        $preview = if ($results.Count -gt $MaxResults) {
-            $results | Select-Object -First $MaxResults
-        } else {
-            $results
-        }
-
-        $previewObjects = foreach ($r in $preview) {
-            [PSCustomObject]@{
-                Name       = $r.Name
-                ResourceID = $r.ResourceID
-                Domain     = $r.ResourceDomainORWorkgroup
-                Client     = $r.Client
-            }
-        }
-
-        Write-Log "Preview returned $($previewObjects.Count) of $($results.Count) total results"
+        Write-Log "Preview returned $(@($table.Rows).Count) of $($results.Count) total rows"
         return [PSCustomObject]@{
-            TotalCount = $results.Count
-            Results    = $previewObjects
+            TotalCount   = $results.Count
+            Columns      = @($table.Columns)
+            Rows         = @($table.Rows)
+            Results      = @($table.Rows)
+            ErrorMessage = ''
         }
     }
     catch {
         Write-Log "WQL preview failed: $_" -Level ERROR
         return [PSCustomObject]@{
-            TotalCount = 0
-            Results    = @()
+            TotalCount   = 0
+            Columns      = @()
+            Rows         = @()
+            Results      = @()
+            ErrorMessage = $_.Exception.Message
         }
     }
 }

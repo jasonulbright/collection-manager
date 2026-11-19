@@ -92,7 +92,12 @@ Section 'wql' {
   $l = (Get-El $win 'lstWqlRules').FindFirst('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)))
   if ($l) { Select-El $l; Start-Sleep -Seconds 1; Shot $win 'wql-rule-selected' }
   Invoke-El (Get-El $win 'btnValidateWql'); Start-Sleep -Seconds 4; Shot $win 'wql-validated'
-  Invoke-El (Get-El $win 'btnPreviewWql'); Start-Sleep -Seconds 5; Shot $win 'wql-previewed'
+  # The preview opens a window. A real click starts it: the window is modal, so an Invoke call would wait until it closes.
+  Click-El (Get-El $win 'btnPreviewWql')
+  $pv = Find-Last 'Preview Results' 20
+  [void](Wait-Until { (Get-ElText (Get-El $pv 'txtSummary' -Quiet)) -match 'Showing|no rows|failed' } 60); Start-Sleep -Seconds 1
+  Shot $pv 'wql-previewed'
+  $pc = Find-Role $pv 'Button' 'Close'; if ($pc) { Click-El $pc } else { Focus-Win $pv; Send-Keys '{ESC}' }; Start-Sleep -Seconds 1
   Tab 'Site Queries'; Start-Sleep -Seconds 1; Shot $win 'wql-site-queries-before'; Invoke-El (Get-El $win 'btnRefreshSavedQueries'); Start-Sleep -Seconds 5; Shot $win 'wql-site-queries'
   $r = Rows 'gridSavedQueries'; Log ('saved queries: ' + $r.Count); if ($r.Count) { Select-El $r[0]; Start-Sleep -Seconds 1; Shot $win 'wql-site-query-selected' }
 }
