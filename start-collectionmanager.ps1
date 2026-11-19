@@ -92,6 +92,8 @@ function Get-CmPreferences {
         DarkMode    = $true
         SiteCode    = ''
         SMSProvider = ''
+        # Seconds to wait for the collection list before the load stops with a message.
+        LoadTimeoutSeconds = 180
     }
 }
 
@@ -211,6 +213,7 @@ $btnApplyTemplate            = $window.FindName('btnApplyTemplate')
 
 $progressOverlay  = $window.FindName('progressOverlay')
 $btnCancelWork     = $window.FindName('btnCancelWork')
+$btnCancelRules    = $window.FindName('btnCancelRules')
 $txtProgressTitle = $window.FindName('txtProgressTitle')
 $txtProgressStep  = $window.FindName('txtProgressStep')
 
@@ -1398,11 +1401,11 @@ function Invoke-Refresh {
     $script:BgTimer.Start()
 }
 
-# The time limit for the collection list. Options can set LoadTimeoutSeconds; the default is 180 seconds.
+# The time limit for the collection list. The preferences file holds LoadTimeoutSeconds (1 or more); the default is 180 seconds.
 function Get-LoadTimeoutSeconds {
     $value = 0
-    try { if ($global:Prefs.PSObject.Properties['LoadTimeoutSeconds']) { $value = [int]$global:Prefs.LoadTimeoutSeconds } } catch { $value = 0 }
-    if ($value -lt 10) { $value = 180 }
+    try { $value = [int]$global:Prefs['LoadTimeoutSeconds'] } catch { $value = 0 }
+    if ($value -lt 1) { $value = 180 }
     return $value
 }
 
@@ -1452,6 +1455,7 @@ function Start-RulesLoad {
         $script:RulesPowerShells += $ps
     }
 
+    $btnCancelRules.Visibility = [System.Windows.Visibility]::Visible
     $script:RulesTimer = New-Object System.Windows.Threading.DispatcherTimer
     $script:RulesTimer.Interval = [TimeSpan]::FromSeconds(1)
     $script:RulesTimer.Add_Tick({
@@ -1492,7 +1496,23 @@ function Stop-RulesLoad {
     $script:RulesPowerShells = @()
     $script:RulesRunspaces = @()
     $script:RulesState = $null
+    $btnCancelRules.Visibility = [System.Windows.Visibility]::Collapsed
 }
+
+# The Cancel button next to Refresh stops the rules pass. The list and the rules read so far stay.
+function Invoke-CancelRules {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification='Stops ephemeral background work only.')]
+    param()
+    $rs = $script:RulesState
+    if (-not $rs) { $btnCancelRules.Visibility = [System.Windows.Visibility]::Collapsed; return }
+    $done = [int](($rs.DoneN | Measure-Object -Sum).Sum)
+    $total = [int]$rs.Total
+    Stop-RulesLoad
+    Update-RuleCountsFromIndex -Final
+    Add-LogLine ('Cancelled: rules read for {0} of {1} collections. The list stays; select Refresh to read the rest.' -f $done, $total)
+    Set-StatusText ('Cancelled. Rules read for {0} of {1} collections.' -f $done, $total)
+}
+$btnCancelRules.Add_Click({ Invoke-CancelRules })
 
 # Copies the rule counts that the rules pass has read so far into the grid rows, and shows the rules of the selected collection when they arrive.
 function Update-RuleCountsFromIndex {

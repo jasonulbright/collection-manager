@@ -128,3 +128,34 @@ Describe 'The collection list shows at once and the rules follow in their own ru
         $script:Text | Should -Match 'function Get-LoadTimeoutSeconds'
     }
 }
+
+Describe 'The rules pass can be cancelled (Q-80)' {
+    BeforeAll {
+        $script:Text = Get-Content -LiteralPath $script:ScriptPath -Raw
+        $script:XamlText = Get-Content -LiteralPath (Join-Path $script:Root 'MainWindow.xaml') -Raw
+    }
+
+    It 'has a Cancel button next to Refresh that is hidden until the rules pass runs' {
+        $script:XamlText | Should -Match '<Button x:Name="btnCancelRules"[^>]*Content="Cancel"[^>]*Visibility="Collapsed"'
+        $script:XamlText.IndexOf('x:Name="btnRefresh"') | Should -BeLessThan $script:XamlText.IndexOf('x:Name="btnCancelRules"')
+        $script:Text | Should -Match '\$btnCancelRules\s+= \$window\.FindName\(''btnCancelRules''\)'
+    }
+
+    It 'shows the button when the pass starts, hides it when the pass stops, and the click stops the pass and says how far it got' {
+        $start = [regex]::Match($script:Text, '(?s)function Start-RulesLoad \{.*?\r?\n\}\r?\n').Value
+        $stop = [regex]::Match($script:Text, '(?s)function Stop-RulesLoad \{.*?\r?\n\}\r?\n').Value
+        $cancel = [regex]::Match($script:Text, '(?s)function Invoke-CancelRules \{.*?\r?\n\}\r?\n').Value
+        $start | Should -Match '\$btnCancelRules\.Visibility = \[System\.Windows\.Visibility\]::Visible'
+        $stop | Should -Match '\$btnCancelRules\.Visibility = \[System\.Windows\.Visibility\]::Collapsed'
+        $cancel | Should -Match 'Stop-RulesLoad'
+        $cancel | Should -Match 'Cancelled: rules read for \{0\} of \{1\} collections'
+        $script:Text | Should -Match '\$btnCancelRules\.Add_Click\(\{ Invoke-CancelRules \}\)'
+    }
+
+    It 'takes a time limit of one second or more from the preferences, so that the limit message can be tested' {
+        $fn = [regex]::Match($script:Text, '(?s)function Get-LoadTimeoutSeconds \{.*?\r?\n\}\r?\n').Value
+        $fn | Should -Match 'LoadTimeoutSeconds'
+        $script:Text | Should -Match 'LoadTimeoutSeconds = 180'
+        $fn | Should -Match 'if \(\$value -lt 1\) \{ \$value = 180 \}'
+    }
+}

@@ -328,6 +328,13 @@
                                 Style="{StaticResource SquareInlineButtonStyle}"
                                 MinWidth="120"
                                 ToolTip="Load all device collections from the site."/>
+                        <Button x:Name="btnCancelRules"
+                                Content="Cancel"
+                                Style="{StaticResource SquareInlineButtonStyle}"
+                                MinWidth="80"
+                                Margin="8,0,0,0"
+                                Visibility="Collapsed"
+                                ToolTip="Stops reading the rules of the collections. The list stays."/>
                     </StackPanel>
 
                     <TextBox x:Name="txtFilter"
