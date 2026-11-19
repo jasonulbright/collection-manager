@@ -6,7 +6,7 @@
 BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     Import-AppModule
-    $script:Stubs = New-CmStub -Name Get-CMDeviceCollection, Get-CMDeviceCollectionQueryMembershipRule, Get-CMCollectionMember, Get-CMQuery, New-CMQuery, Set-CMQuery, Remove-CMQuery
+    $script:Stubs = New-CmStub -Name Get-CMDeviceCollection, Invoke-CMWmiQuery, Get-CMDeviceCollectionQueryMembershipRule, Get-CMCollectionMember, Get-CMQuery, New-CMQuery, Set-CMQuery, Remove-CMQuery
     Mock Write-Log {} -ModuleName CollectionManagerCommon
 }
 
@@ -100,7 +100,7 @@ Describe 'Get-AllDeviceCollections' {
         @{ Type = 99; Name = 'Unknown (99)' }
     ) {
         $global:Fx = $Type
-        Mock Get-CMDeviceCollection { [PSCustomObject]@{ CollectionID = 'MCM00001'; Name = 'A'; MemberCount = 5; RefreshType = $global:Fx; LimitToCollectionName = 'All'; LimitToCollectionID = 'SMS00001'; Comment = ''; CollectionRules = @() } } -ModuleName CollectionManagerCommon
+        Mock Invoke-CMWmiQuery { [PSCustomObject]@{ CollectionID = 'MCM00001'; Name = 'A'; MemberCount = 5; RefreshType = $global:Fx; LimitToCollectionName = 'All'; LimitToCollectionID = 'SMS00001'; Comment = '' } } -ModuleName CollectionManagerCommon
         (@(Get-AllDeviceCollections))[0].RefreshType | Should -Be $Name
     }
 
@@ -112,28 +112,75 @@ Describe 'Get-AllDeviceCollections' {
         @{ Id = 'ZZ1SMS00'; Builtin = $false }
     ) {
         $global:Fx = $Id
-        Mock Get-CMDeviceCollection { [PSCustomObject]@{ CollectionID = $global:Fx; Name = 'A'; MemberCount = 0; RefreshType = 1 } } -ModuleName CollectionManagerCommon
+        Mock Invoke-CMWmiQuery { [PSCustomObject]@{ CollectionID = $global:Fx; Name = 'A'; MemberCount = 0; RefreshType = 1 } } -ModuleName CollectionManagerCommon
         (@(Get-AllDeviceCollections))[0].IsBuiltIn | Should -Be $Builtin
     }
 
     It 'turns a null member count into 0' {
-        Mock Get-CMDeviceCollection { [PSCustomObject]@{ CollectionID = 'MCM00001'; Name = 'A'; MemberCount = $null; RefreshType = 1 } } -ModuleName CollectionManagerCommon
+        Mock Invoke-CMWmiQuery { [PSCustomObject]@{ CollectionID = 'MCM00001'; Name = 'A'; MemberCount = $null; RefreshType = 1 } } -ModuleName CollectionManagerCommon
         (@(Get-AllDeviceCollections))[0].MemberCount | Should -Be 0
     }
 
     It 'returns nothing for a site without device collections' {
-        Mock Get-CMDeviceCollection { } -ModuleName CollectionManagerCommon
+        Mock Invoke-CMWmiQuery { } -ModuleName CollectionManagerCommon
         @(Get-AllDeviceCollections).Count | Should -Be 0
     }
 
-    It 'handles 3000 collections' {
-        Mock Get-CMDeviceCollection { 1..3000 | ForEach-Object { [PSCustomObject]@{ CollectionID = "MCM$_"; Name = "C$_"; MemberCount = $_; RefreshType = 2 } } } -ModuleName CollectionManagerCommon
-        @(Get-AllDeviceCollections).Count | Should -Be 3000
+    It 'lets a provider failure reach the caller' {
+        Mock Invoke-CMWmiQuery { throw 'not connected' } -ModuleName CollectionManagerCommon
+        { Get-AllDeviceCollections } | Should -Throw '*not connected*'
     }
 
-    It 'lets a cmdlet failure reach the caller' {
-        Mock Get-CMDeviceCollection { throw 'not connected' } -ModuleName CollectionManagerCommon
-        { Get-AllDeviceCollections } | Should -Throw '*not connected*'
+    It 'reads the whole list with ONE provider call, however many collections the site has (<Count>)' -ForEach @(@{ Count = 2000 }, @{ Count = 20000 }) {
+        $global:Fx = $Count
+        $global:FxCalls = 0
+        Mock Invoke-CMWmiQuery { $global:FxCalls++; 1..$global:Fx | ForEach-Object { [PSCustomObject]@{ CollectionID = "MCM$_"; Name = "C$_"; MemberCount = $_; RefreshType = 2; LimitToCollectionName = 'All Systems'; LimitToCollectionID = 'SMS00001'; Comment = '' } } } -ModuleName CollectionManagerCommon
+        Mock Get-CMDeviceCollection { throw 'the per-collection cmdlet must not be used for the list' } -ModuleName CollectionManagerCommon
+        $r = @(Get-AllDeviceCollections)
+        $r.Count | Should -Be $Count
+        $global:FxCalls | Should -Be 1
+        Should -Invoke Get-CMDeviceCollection -ModuleName CollectionManagerCommon -Times 0 -Exactly
+    }
+
+    It 'asks for plain columns only (no lazy properties) with the fast option' {
+        Mock Invoke-CMWmiQuery { } -ModuleName CollectionManagerCommon
+        $null = Get-AllDeviceCollections
+        Should -Invoke Invoke-CMWmiQuery -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter {
+            $Option -eq 'Fast' -and $Query -match '^SELECT CollectionID, Name, MemberCount, .* FROM SMS_Collection WHERE CollectionType = 2$' -and $Query -notmatch 'CollectionRules|\*'
+        }
+    }
+
+    It 'has no Get-CMDeviceCollection call without an id or a name in the collection list functions' {
+        $text = Get-Content -LiteralPath "$PSScriptRoot\..\Module\CollectionManagerCommon.psm1" -Raw
+        $m = [regex]::Match($text, '(?s)function Get-AllDeviceCollections \{.*?\r?\n\}\r?\n')
+        $m.Success | Should -BeTrue
+        $code = [regex]::Replace($m.Value, '(?s)<#.*?#>', '')
+        $code | Should -Not -Match 'Get-CMDeviceCollection'
+    }
+}
+
+Describe 'Get-CollectionRuleSet' {
+    It 'sorts direct, query, include and exclude rules of one collection and reads the collection once' {
+        $global:Fx = @(
+            [PSCustomObject]@{ SmsProviderObjectPath = 'SMS_CollectionRuleDirect.RuleName=A'; RuleName = 'PC1'; ResourceID = 16777220 }
+            [PSCustomObject]@{ SmsProviderObjectPath = 'SMS_CollectionRuleQuery.RuleName=Q'; RuleName = 'Q'; QueryExpression = 'select 1' }
+            [PSCustomObject]@{ SmsProviderObjectPath = 'SMS_CollectionRuleIncludeCollection.x'; RuleName = 'Inc'; IncludeCollectionID = 'MCM00002' }
+            [PSCustomObject]@{ SmsProviderObjectPath = 'SMS_CollectionRuleExcludeCollection.x'; RuleName = 'Exc'; ExcludeCollectionID = 'MCM00003' }
+        )
+        Mock Invoke-CMWmiQuery { [PSCustomObject]@{ CollectionID = 'MCM00001'; CollectionRules = $global:Fx } } -ModuleName CollectionManagerCommon
+        $r = Get-CollectionRuleSet -CollectionId 'MCM00001'
+        @($r.Direct).Count | Should -Be 1
+        @($r.Query).Count | Should -Be 1
+        $r.Query[0].QueryExpression | Should -Be 'select 1'
+        $r.Include[0].IncludeCollectionID | Should -Be 'MCM00002'
+        $r.Exclude[0].ExcludeCollectionID | Should -Be 'MCM00003'
+        Should -Invoke Invoke-CMWmiQuery -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter { $Query -eq "SELECT * FROM SMS_Collection WHERE CollectionID = 'MCM00001'" -and $Option -eq 'Lazy' }
+    }
+
+    It 'returns empty lists for a collection without rules' {
+        Mock Invoke-CMWmiQuery { [PSCustomObject]@{ CollectionID = 'MCM00001'; CollectionRules = $null } } -ModuleName CollectionManagerCommon
+        $r = Get-CollectionRuleSet -CollectionId 'MCM00001'
+        @($r.Direct).Count + @($r.Query).Count + @($r.Include).Count + @($r.Exclude).Count | Should -Be 0
     }
 }
 
