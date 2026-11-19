@@ -1427,7 +1427,8 @@ function Start-RulesLoad {
             [void](Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider)
             foreach ($id in $Ids) {
                 if ($State['Cancel']) { break }
-                try { $State.Index[$id] = Get-CollectionRuleSet -CollectionId $id }
+                # Invoke-SuiteCMRead tries a transient fault again (2 s and 6 s later) and logs each attempt.
+                try { $State.Index[$id] = Invoke-SuiteCMRead -Description ('Rules of ' + $id) -ScriptBlock { Get-CollectionRuleSet -CollectionId $id }.GetNewClosure() }
                 catch {
                     $State.Failed = [int]$State.Failed + 1
                     if ([int]$State.Failed -le 3) { try { Write-Log ('Rules of {0}: {1}' -f $id, $_.Exception.Message) } catch { $null = $_ } }
