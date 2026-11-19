@@ -43,6 +43,7 @@
         # WQL
         'Test-WqlQuery'
         'Invoke-WqlPreview'
+        'ConvertTo-WqlPreviewRows'
 
         # Templates
         'Get-OperationalTemplates'

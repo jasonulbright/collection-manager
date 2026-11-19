@@ -73,31 +73,85 @@ Describe 'Invoke-WqlPreview' {
         @($r.Results).Count | Should -Be $Shown
     }
 
-    It 'shows 50 rows by default' {
-        @((Invoke-WqlPreview -QueryExpression 'select 1').Results).Count | Should -Be 50
+    It 'shows 200 rows by default and reports the total' {
+        Mock Invoke-CMWmiQuery { 1..250 | ForEach-Object { [PSCustomObject]@{ Name = "PC$_"; ResourceID = $_ } } } -ModuleName CollectionManagerCommon
+        $r = Invoke-WqlPreview -QueryExpression 'select 1'
+        $r.TotalCount | Should -Be 250
+        @($r.Rows).Count | Should -Be 200
+        @($r.Results).Count | Should -Be 200
     }
 
-    It 'maps the result columns' {
-        $row = (Invoke-WqlPreview -QueryExpression 'select 1' -MaxResults 1).Results | Select-Object -First 1
+    It 'returns the columns and the rows, with Name and ResourceID first' {
+        $r = Invoke-WqlPreview -QueryExpression 'select 1' -MaxResults 2
+        $r.Columns[0] | Should -Be 'Name'
+        $r.Columns[1] | Should -Be 'ResourceID'
+        @($r.Columns) | Should -Contain 'ResourceDomainORWorkgroup'
+        $row = $r.Rows | Select-Object -First 1
         $row.Name | Should -Be 'PC1'
-        $row.ResourceID | Should -Be 1
-        $row.Domain | Should -Be 'CONTOSO'
-        $row.Client | Should -Be 1
+        $row.ResourceID | Should -Be '1'
+        $row.ResourceDomainORWorkgroup | Should -Be 'CONTOSO'
+        $r.ErrorMessage | Should -Be ''
     }
 
     It 'returns an empty preview for a query without result' {
         Mock Invoke-CMWmiQuery { } -ModuleName CollectionManagerCommon
         $r = Invoke-WqlPreview -QueryExpression 'select 1'
         $r.TotalCount | Should -Be 0
-        @($r.Results).Count | Should -Be 0
+        @($r.Rows).Count | Should -Be 0
+        $r.ErrorMessage | Should -Be ''
     }
 
-    It 'returns an empty preview and logs an error when the query fails' {
+    It 'returns the error message and logs an error when the query fails, so a failure never shows as zero rows' {
         Mock Invoke-CMWmiQuery { throw 'bad query' } -ModuleName CollectionManagerCommon
         $r = Invoke-WqlPreview -QueryExpression 'x'
         $r.TotalCount | Should -Be 0
-        @($r.Results).Count | Should -Be 0
+        @($r.Rows).Count | Should -Be 0
+        $r.ErrorMessage | Should -Be 'bad query'
         @($global:TestLogs | Where-Object Level -eq 'ERROR').Count | Should -Be 1
+    }
+}
+
+Describe 'ConvertTo-WqlPreviewRows' {
+    It 'uses the columns that the query selects, with Name and ResourceId first' {
+        $o = [PSCustomObject]@{ PropertyNames = @('Client', 'Name', 'ResourceId'); Client = 1; Name = 'PC1'; ResourceId = 16777219 }
+        $t = ConvertTo-WqlPreviewRows -Results @($o)
+        @($t.Columns) | Should -Be @('Name', 'ResourceId', 'Client')
+        $t.Rows[0].Name | Should -Be 'PC1'
+        $t.Rows[0].ResourceId | Should -Be '16777219'
+        $t.Rows[0].Client | Should -Be '1'
+    }
+
+    It 'names the columns of a join as Class.Property' {
+        $left = [PSCustomObject]@{ PropertyNames = @('Name'); Name = 'PC1' }
+        $right = [PSCustomObject]@{ PropertyNames = @('Manufacturer'); Manufacturer = 'Contoso' }
+        $o = [PSCustomObject]@{ SMS_R_System = @($left); SMS_G_System_COMPUTER_SYSTEM = @($right) }
+        $t = ConvertTo-WqlPreviewRows -Results @($o)
+        @($t.Columns) | Should -Be @('SMS_R_System.Name', 'SMS_G_System_COMPUTER_SYSTEM.Manufacturer')
+        $t.Rows[0].'SMS_R_System.Name' | Should -Be 'PC1'
+        $t.Rows[0].'SMS_G_System_COMPUTER_SYSTEM.Manufacturer' | Should -Be 'Contoso'
+    }
+
+    It 'keeps at most 12 columns of a select * query' {
+        $names = 1..30 | ForEach-Object { 'Col{0:00}' -f $_ }
+        $o = [PSCustomObject]@{ PropertyNames = @($names + 'Name') }
+        foreach ($n in $names + 'Name') { Add-Member -InputObject $o -NotePropertyName $n -NotePropertyValue 'v' }
+        $t = ConvertTo-WqlPreviewRows -Results @($o)
+        @($t.Columns).Count | Should -Be 12
+        $t.Columns[0] | Should -Be 'Name'
+    }
+
+    It 'writes a list value as one text and a date as text, and an empty value as an empty text' {
+        $o = [PSCustomObject]@{ PropertyNames = @('Name', 'IPAddresses', 'CreationDate', 'Owner'); Name = 'PC1'; IPAddresses = @('10.0.0.1', '10.0.0.2'); CreationDate = [datetime]'2026-11-18 09:30:00'; Owner = $null }
+        $t = ConvertTo-WqlPreviewRows -Results @($o)
+        $t.Rows[0].IPAddresses | Should -Be '10.0.0.1, 10.0.0.2'
+        $t.Rows[0].CreationDate | Should -Be '2026-11-18 09:30:00'
+        $t.Rows[0].Owner | Should -Be ''
+    }
+
+    It 'returns no column and no row for no result' {
+        $t = ConvertTo-WqlPreviewRows -Results @()
+        @($t.Columns).Count | Should -Be 0
+        @($t.Rows).Count | Should -Be 0
     }
 }
 

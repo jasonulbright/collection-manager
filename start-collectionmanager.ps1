@@ -1528,6 +1528,159 @@ $btnValidateWql.Add_Click({
     Add-LogLine ('WQL validate: {0}' -f $txtWqlValidation.Text)
 })
 
+# The preview of a query opens a window with the returned rows in a grid, read only. The query runs in a runspace of its own, so
+# Cancel can end a long query without dropping the connection of the main background runspace. The window shows at most 200 rows
+# and says how many the query returned.
+function Show-WqlPreviewDialog {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Modal dialog show; reads as a single action.')]
+    param([Parameter(Mandatory)][string]$Wql)
+
+    $dlgXaml = @'
+<Controls:MetroWindow
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+    Title="Preview Results"
+    Width="900" Height="520" MinWidth="560" MinHeight="320"
+    WindowStartupLocation="CenterOwner"
+    TitleCharacterCasing="Normal"
+    GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+    NonActiveGlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+    BorderThickness="1"
+    ShowIconOnTitleBar="False">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Steel.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource MahApps.Styles.Button.Square}">
+                <Setter Property="Template" Value="{DynamicResource SuiteNeutralButtonTemplate}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource MahApps.Brushes.Gray2}"/>
+                <Setter Property="MinWidth" Value="90"/><Setter Property="Height" Value="32"/>
+                <Setter Property="Controls:ControlsHelper.ContentCharacterCasing" Value="Normal"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="20,16,20,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock x:Name="txtSummary" Grid.Row="0" FontSize="13" TextWrapping="Wrap" Text="Running the query on the site..."/>
+        <ProgressBar x:Name="barRunning" Grid.Row="1" Height="4" Margin="0,8,0,0" IsIndeterminate="True"/>
+        <DataGrid x:Name="gridPreview" Grid.Row="2" Margin="0,12,0,0" IsReadOnly="True" AutoGenerateColumns="True"
+                  CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeaderWidth="0" FontSize="11"
+                  Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
+                  Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
+                  BorderBrush="{DynamicResource MahApps.Brushes.Gray8}" BorderThickness="1"
+                  HorizontalGridLinesBrush="{DynamicResource MahApps.Brushes.Gray8}"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="btnCancel" Content="Cancel" Style="{StaticResource DialogButton}"/>
+        </StackPanel>
+    </Grid>
+</Controls:MetroWindow>
+'@
+    [xml]$dx = $dlgXaml
+    $reader2 = New-Object System.Xml.XmlNodeReader $dx
+    $dlg = [System.Windows.Markup.XamlReader]::Load($reader2)
+    $dlg.Owner = $window
+    Install-TitleBarDragFallback -Window $dlg
+    Set-DialogTheme -Dialog $dlg
+
+    $txtSummary  = $dlg.FindName('txtSummary')
+    $barRunning  = $dlg.FindName('barRunning')
+    $gridPreview = $dlg.FindName('gridPreview')
+    $btnCancel   = $dlg.FindName('btnCancel')
+
+    $wqlStatus   = $txtWqlValidation
+    $siteCode    = [string]$global:Prefs.SiteCode
+    $smsProvider = [string]$global:Prefs.SMSProvider
+    $limit       = 200
+    $state = [hashtable]::Synchronized(@{ Done = $false; Result = $null; ErrorMsg = $null; Cancelled = $false })
+    $rs = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
+    $ps = [powershell]::Create()
+    $ps.Runspace = $rs
+    [void]$ps.AddScript({
+        param($Wql, $SiteCode, $SMSProvider, $Limit, $State)
+        try {
+            if (-not (Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider)) { $State.ErrorMsg = "Failed to connect to site $SiteCode (provider $SMSProvider)."; return }
+            $State.Result = Invoke-WqlPreview -QueryExpression $Wql -MaxResults $Limit
+        }
+        catch { $State.ErrorMsg = $_.Exception.Message }
+        finally { $State.Done = $true }
+    }).AddArgument($Wql).AddArgument($siteCode).AddArgument($smsProvider).AddArgument($limit).AddArgument($state)
+    $handle = $ps.BeginInvoke()
+
+    $timer = New-Object System.Windows.Threading.DispatcherTimer
+    $timer.Interval = [TimeSpan]::FromMilliseconds(120)
+    $finish = {
+        $barRunning.Visibility = [System.Windows.Visibility]::Collapsed
+        $btnCancel.Content = 'Close'
+    }.GetNewClosure()
+    $timer.Add_Tick({
+        if (-not $state.Done) { return }
+        $timer.Stop()
+        try { [void]$ps.EndInvoke($handle) } catch { $null = $_ }
+        try { $ps.Dispose() } catch { $null = $_ }
+        Close-SuiteBgRunspace -Runspace $rs
+        & $finish
+        $r = $state.Result
+        if ($state.ErrorMsg -or ($r -and $r.ErrorMessage)) {
+            $msg = if ($state.ErrorMsg) { $state.ErrorMsg } else { $r.ErrorMessage }
+            $txtSummary.Text = ('The query failed: {0}' -f $msg)
+            Add-LogLine ('WQL preview failed: {0}' -f $msg)
+            return
+        }
+        $total = [int]$r.TotalCount
+        $rows = @($r.Rows)
+        $table = New-Object System.Data.DataTable
+        foreach ($c in @($r.Columns)) { [void]$table.Columns.Add([string]$c, [string]) }
+        foreach ($row in $rows) {
+            $dr = $table.NewRow()
+            foreach ($c in @($r.Columns)) { $dr[[string]$c] = [string]$row.$c }
+            [void]$table.Rows.Add($dr)
+        }
+        $gridPreview.ItemsSource = $table.DefaultView
+        $word = if ($total -eq 1) { 'row' } else { 'rows' }
+        $txtSummary.Text = if ($total -eq 0) { 'The query returned no rows.' } elseif ($rows.Count -lt $total) { ('Showing {0} of {1} {2}.' -f $rows.Count, $total, $word) } else { ('Showing {0} of {0} {1}.' -f $total, $word) }
+        Add-LogLine ('WQL preview: {0}' -f $txtSummary.Text)
+        $wqlStatus.Text = ('Preview: {0} {1} returned.' -f $total, $word)
+    }.GetNewClosure())
+    $btnCancel.Add_Click({
+        if (-not $state.Done -and -not $state.Cancelled) {
+            $state.Cancelled = $true
+            $timer.Stop()
+            try { [void]$ps.BeginStop($null, $null) } catch { $null = $_ }
+            Close-SuiteBgRunspace -Runspace $rs
+            & $finish
+            $txtSummary.Text = 'The preview was cancelled.'
+            Add-LogLine 'WQL preview cancelled.'
+            return
+        }
+        $dlg.Close()
+    }.GetNewClosure())
+    $dlg.Add_Closing({
+        if (-not $state.Done -and -not $state.Cancelled) {
+            $state.Cancelled = $true
+            $timer.Stop()
+            try { [void]$ps.BeginStop($null, $null) } catch { $null = $_ }
+            Close-SuiteBgRunspace -Runspace $rs
+        }
+    }.GetNewClosure())
+    # Escape does what the button does: it cancels a running query, and it closes the window when the query has ended.
+    $dlg.Add_PreviewKeyDown({
+        if ($_.Key -eq [System.Windows.Input.Key]::Escape) { $_.Handled = $true; $btnCancel.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Primitives.ButtonBase]::ClickEvent))) }
+    }.GetNewClosure())
+    $timer.Start()
+    [void]$dlg.ShowDialog()
+}
+
 $btnPreviewWql.Add_Click({
     $wql = ([string]$txtWqlEditor.Text).Trim()
     if (-not $wql) {
@@ -1538,39 +1691,7 @@ $btnPreviewWql.Add_Click({
         $txtWqlValidation.Text = 'Connect to the site first.'
         return
     }
-    $txtWqlValidation.Text = 'Previewing...'
-    Initialize-BgRunspace
-    $local = [hashtable]::Synchronized(@{ Done = $false; Result = $null; ErrorMsg = $null })
-    $ps = [powershell]::Create()
-    $ps.Runspace = $script:BgRunspace
-    [void]$ps.AddScript({
-        param($Wql, $State)
-        try { $State.Result = Invoke-WqlPreview -QueryExpression $Wql }
-        catch { $State.ErrorMsg = $_.Exception.Message }
-        finally { $State.Done = $true }
-    }).AddArgument($wql).AddArgument($local)
-    $handle = $ps.BeginInvoke()
-    $timer = New-Object System.Windows.Threading.DispatcherTimer
-    $timer.Interval = [TimeSpan]::FromMilliseconds(120)
-    $timer.Tag = @{ ps = $ps; handle = $handle; state = $local }
-    $timer.Add_Tick({
-        $info = $this.Tag
-        if ($info.state.Done) {
-            $this.Stop()
-            try { [void]$info.ps.EndInvoke($info.handle) } catch { $null = $_ }
-            try { $info.ps.Dispose() } catch { $null = $_ }
-            if ($info.state.ErrorMsg) {
-                $txtWqlValidation.Text = ('Preview failed: {0}' -f $info.state.ErrorMsg)
-                Add-LogLine $txtWqlValidation.Text
-                return
-            }
-            $r = $info.state.Result
-            $count = if ($r) { [int]$r.TotalCount } else { 0 }
-            $txtWqlValidation.Text = ('Preview: {0} {1} matched.' -f $count, $(if ($count -eq 1) { 'row' } else { 'rows' }))
-            Add-LogLine $txtWqlValidation.Text
-        }
-    })
-    $timer.Start()
+    Show-WqlPreviewDialog -Wql $wql
 })
 
 $btnOpenWqlCollection.Add_Click({
