@@ -1418,11 +1418,12 @@ function Start-RulesLoad {
     # Four workers read the rules in parallel, each in a runspace of its own and each every fourth collection. The provider answers
     # the reads side by side, so the pass takes about a quarter of the time.
     $workers = 4
-    $script:RulesState = [hashtable]::Synchronized(@{ Total = $ids.Count; Done = 0; Failed = 0; Finished = 0; Workers = $workers; Cancel = $false; Index = $script:CollectionRulesIndex })
+    $script:RulesState = [hashtable]::Synchronized(@{ Total = $ids.Count; DoneN = [int[]]::new($workers); FailedN = [int[]]::new($workers); FinishedN = [int[]]::new($workers); FirstError = ''; Workers = $workers; Cancel = $false; Index = $script:CollectionRulesIndex })
     $script:RulesRunspaces = @()
     $script:RulesPowerShells = @()
+    # Each worker writes only its own slot of the counter arrays, so that no update is lost.
     $worker = {
-        param($SiteCode, $SMSProvider, $State, $Ids)
+        param($SiteCode, $SMSProvider, $State, $Ids, $W)
         try {
             [void](Connect-CMSite -SiteCode $SiteCode -SMSProvider $SMSProvider)
             foreach ($id in $Ids) {
@@ -1430,21 +1431,22 @@ function Start-RulesLoad {
                 # Invoke-SuiteCMRead tries a transient fault again (2 s and 6 s later) and logs each attempt.
                 try { $State.Index[$id] = Invoke-SuiteCMRead -Description ('Rules of ' + $id) -ScriptBlock { Get-CollectionRuleSet -CollectionId $id }.GetNewClosure() }
                 catch {
-                    $State.Failed = [int]$State.Failed + 1
-                    if ([int]$State.Failed -le 3) { try { Write-Log ('Rules of {0}: {1}' -f $id, $_.Exception.Message) } catch { $null = $_ } }
+                    $State.FailedN[$W] = [int]$State.FailedN[$W] + 1
+                    if (-not $State.FirstError) { $State.FirstError = ('{0}: {1}' -f $id, $_.Exception.Message) }
+                    if ([int]$State.FailedN[$W] -le 3) { try { Write-Log ('Rules of {0}: {1}' -f $id, $_.Exception.Message) } catch { $null = $_ } }
                 }
-                $State.Done = [int]$State.Done + 1
+                $State.DoneN[$W] = [int]$State.DoneN[$W] + 1
             }
         }
-        catch { $State.Failed = [int]$State.Failed + @($Ids).Count; $State.Done = [int]$State.Done + @($Ids).Count; try { Write-Log ('Rules load failed: {0}' -f $_.Exception.Message) } catch { $null = $_ } }
-        finally { $State.Finished = [int]$State.Finished + 1 }
+        catch { $State.FailedN[$W] = [int]$State.FailedN[$W] + @($Ids).Count; $State.DoneN[$W] = [int]$State.DoneN[$W] + @($Ids).Count; try { Write-Log ('Rules load failed: {0}' -f $_.Exception.Message) } catch { $null = $_ } }
+        finally { $State.FinishedN[$W] = 1 }
     }
     for ($w = 0; $w -lt $workers; $w++) {
         $mine = @(for ($i = $w; $i -lt $ids.Count; $i += $workers) { $ids[$i] })
         $rs = New-SuiteBgRunspace -ModulePath (Join-Path $PSScriptRoot 'Module\CollectionManagerCommon.psd1') -LogPath $script:ToolLogPath
         $ps = [powershell]::Create()
         $ps.Runspace = $rs
-        [void]$ps.AddScript($worker).AddArgument([string]$global:Prefs.SiteCode).AddArgument([string]$global:Prefs.SMSProvider).AddArgument($script:RulesState).AddArgument($mine)
+        [void]$ps.AddScript($worker).AddArgument([string]$global:Prefs.SiteCode).AddArgument([string]$global:Prefs.SMSProvider).AddArgument($script:RulesState).AddArgument($mine).AddArgument($w)
         [void]$ps.BeginInvoke()
         $script:RulesRunspaces += $rs
         $script:RulesPowerShells += $ps
@@ -1455,24 +1457,26 @@ function Start-RulesLoad {
     $script:RulesTimer.Add_Tick({
         $rs = $script:RulesState
         if (-not $rs) { return }
-        $allFinished = ([int]$rs.Finished -ge [int]$rs.Workers)
+        $allFinished = (@($rs.FinishedN | Where-Object { $_ -eq 1 }).Count -ge [int]$rs.Workers)
+        $doneNow = [int](($rs.DoneN | Measure-Object -Sum).Sum)
         # The grid is refreshed every 5 seconds at most: a refresh of 2,000 rows costs the window time.
         if ($allFinished -or -not $script:LastCountApply -or ((Get-Date) - $script:LastCountApply).TotalSeconds -ge 5) {
             $script:LastCountApply = Get-Date
             Update-RuleCountsFromIndex
         }
         if ($allFinished) {
-            $failed = [int]$rs.Failed
+            $failed = [int](($rs.FailedN | Measure-Object -Sum).Sum)
             $total = [int]$rs.Total
-            $done = [int]$rs.Done
+            $done = $doneNow
+            $firstError = [string]$rs.FirstError
             Stop-RulesLoad
             Update-RuleCountsFromIndex -Final
-            if ($failed -gt 0) { Add-LogLine ('Rules loaded for {0} of {1} collections; {2} could not be read. The log has the first errors.' -f ($done - $failed), $total, $failed) }
+            if ($failed -gt 0) { Add-LogLine ('Rules loaded for {0} of {1} collections; {2} could not be read. First error: {3}' -f ($done - $failed), $total, $failed, $firstError) }
             else { Add-LogLine ('Rules loaded for {0} of {1} collections.' -f $done, $total) }
             Update-StatusBarSummary
         }
         else {
-            Set-StatusText ('Loaded {0} collections. Loading rules: {1} of {2}.' -f $rs.Total, $rs.Done, $rs.Total)
+            Set-StatusText ('Loaded {0} collections. Loading rules: {1} of {2}.' -f $rs.Total, $doneNow, $rs.Total)
         }
     })
     $script:RulesTimer.Start()

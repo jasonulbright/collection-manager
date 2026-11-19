@@ -118,7 +118,7 @@ Describe 'The collection list shows at once and the rules follow in their own ru
         $script:RulesLoad | Should -Match 'New-SuiteBgRunspace'
         $script:RulesLoad | Should -Match 'Get-CollectionRuleSet -CollectionId \$id'
         $script:RulesLoad | Should -Match 'if \(\$State\[''Cancel''\]\) \{ break \}'
-        $script:RulesLoad | Should -Match '\$State\.Failed = \[int\]\$State\.Failed \+ 1'
+        $script:RulesLoad | Should -Match '\$State\.FailedN\[\$W\] = \[int\]\$State\.FailedN\[\$W\] \+ 1'
         $script:RulesLoad | Should -Match 'Loading rules: \{1\} of \{2\}'
     }
 
