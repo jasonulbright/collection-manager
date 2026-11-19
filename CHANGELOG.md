@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- Loading the collection list no longer takes minutes at a large site. One query reads the whole list, the rules of each collection load afterwards in the background with a progress line, and a list that does not load in 180 seconds stops with a message.
 - Preview Results showed only the count and never the rows. A query that fails now shows its error and no longer shows zero rows.
 - The guide capture tool stops only the processes that it started, by process id. It no longer stops PowerShell processes by command-line pattern, which could end the window of another session. A new guard test fails when a tool script stops a process by a pattern.
 

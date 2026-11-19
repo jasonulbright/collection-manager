@@ -93,3 +93,38 @@ Describe 'Add and remove of direct members stay off the UI thread' {
         $dialog | Should -Match 'Close-SuiteBgRunspace -Runspace \$dlgState\.WriteRunspace'
     }
 }
+
+Describe 'The collection list shows at once and the rules follow in their own runspace (Q-80)' {
+    BeforeAll {
+        $script:Text = Get-Content -LiteralPath $script:ScriptPath -Raw
+        $script:Refresh = [regex]::Match($script:Text, '(?s)function Invoke-Refresh \{.*?\r?\n\}\r?\n').Value
+        $script:RulesLoad = [regex]::Match($script:Text, '(?s)function Start-RulesLoad \{.*?\r?\n\}\r?\n').Value
+    }
+
+    It 'reads the list with the bulk function: no per-collection cmdlet and no rules parsing in the refresh worker' {
+        $script:Refresh | Should -Match 'Get-AllDeviceCollections'
+        $script:Refresh | Should -Not -Match 'Get-CMDeviceCollection'
+        $script:Refresh | Should -Not -Match '\.CollectionRules'
+        $script:Refresh | Should -Not -Match 'Parsing rules'
+    }
+
+    It 'starts the rules pass after the list is applied, and a new refresh or the end of the program stops it' {
+        $script:Refresh.LastIndexOf('Start-RulesLoad') | Should -BeGreaterThan $script:Refresh.IndexOf('$gridCollections.ItemsSource = $script:Collections')
+        $script:Refresh | Should -Match 'Stop-RulesLoad'
+        $script:Text | Should -Match '(?s)\$window\.Add_Closing\(\{.*?Stop-RulesLoad'
+    }
+
+    It 'reads the rules of one collection at a time in a runspace of its own, stops on Cancel and counts failures' {
+        $script:RulesLoad | Should -Match 'New-SuiteBgRunspace'
+        $script:RulesLoad | Should -Match 'Get-CollectionRuleSet -CollectionId \$id'
+        $script:RulesLoad | Should -Match 'if \(\$State\[''Cancel''\]\) \{ break \}'
+        $script:RulesLoad | Should -Match '\$State\.Failed = \[int\]\$State\.Failed \+ 1'
+        $script:RulesLoad | Should -Match 'Loading rules: \{1\} of \{2\}'
+    }
+
+    It 'shows blank rule counts until a collection is read, and has a time limit with a clear message' {
+        $script:Refresh | Should -Match '\$directCount = if \(\$idx\) \{ @\(\$idx\.Direct\)\.Count \}\s+else \{ \$null \}'
+        $script:Refresh | Should -Match 'Loading the collection list took longer than'
+        $script:Text | Should -Match 'function Get-LoadTimeoutSeconds'
+    }
+}

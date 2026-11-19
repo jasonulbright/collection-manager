@@ -12,6 +12,7 @@
 
         # Collection Queries
         'Get-AllDeviceCollections'
+        'Get-CollectionRuleSet'
         'Get-CollectionDetail'
         'Get-CollectionQueryRules'
         'Get-SiteSavedQueries'
