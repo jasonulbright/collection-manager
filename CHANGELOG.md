@@ -4,6 +4,7 @@
 
 ### Changed
 
+- The status line writes operational templates and parameterized templates in full. The description of the app says a result preview.
 - Preview Results opens a window with the returned rows in a grid. It shows Name, ResourceId and the other columns that the query selects, at most 200 rows, with the line Showing N of M rows. Cancel ends a long query.
 - Use ConfigMgr terms in the window text, the README and the guide. For example, write SMS Provider and Configuration Manager console, and write select in the steps.
 - Correct the guide: the message next to the WQL buttons is `Connect to the site first.`
