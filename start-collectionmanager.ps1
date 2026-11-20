@@ -465,10 +465,10 @@ function Update-StatusBarSummary {
         $parts += ('{0} targeted collection(s)' -f @($script:Collections).Count)
     }
     if ($script:OperationalTemplates -and @($script:OperationalTemplates).Count -gt 0) {
-        $parts += ('{0} op templates' -f @($script:OperationalTemplates).Count)
+        $parts += ('{0} operational templates' -f @($script:OperationalTemplates).Count)
     }
     if ($script:ParameterizedTemplates -and @($script:ParameterizedTemplates).Count -gt 0) {
-        $parts += ('{0} param templates' -f @($script:ParameterizedTemplates).Count)
+        $parts += ('{0} parameterized templates' -f @($script:ParameterizedTemplates).Count)
     }
     if ($script:LastRefreshTime) {
         $parts += ('last refresh {0}' -f $script:LastRefreshTime.ToString('HH:mm:ss'))
@@ -2922,7 +2922,7 @@ function Show-OptionsDialog {
                 <TextBlock Text="About" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.2.1"
                            FontSize="13" FontWeight="SemiBold"/>
-                <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a 1-shot result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
+                <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                 <TextBlock Text="238 ready-made operational queries plus 20 parameterized templates ship with the app."
                            FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
