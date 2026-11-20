@@ -2,18 +2,25 @@
 
 ## [Unreleased]
 
+## [2026.11.20.0032] - 2026-11-20
+
+## 10 changes: one-query collection list, row preview, ConfigMgr wording
+
 ### Changed
 
-- The status line writes operational templates and parameterized templates in full. The description of the app says a result preview.
-- Preview Results opens a window with the returned rows in a grid. It shows Name, ResourceId and the other columns that the query selects, at most 200 rows, with the line Showing N of M rows. Cancel ends a long query.
-- Use ConfigMgr terms in the window text, the README and the guide. For example, write SMS Provider and Configuration Manager console, and write select in the steps.
-- Correct the guide: the message next to the WQL buttons is `Connect to the site first.`
+- Open a grid of the returned rows from Preview Results.
+- Show at most 200 rows and a Showing N of M rows line.
+- Add Cancel for a long preview query.
+- Write operational and parameterized templates in full on the status line.
+- Use ConfigMgr terms in window text, README and guide.
+- Correct the guide text next to the WQL buttons.
 
 ### Fixed
 
-- Loading the collection list no longer takes minutes at a large site. One query reads the whole list, the rules of each collection load afterwards in the background with a progress line, and a list that does not load in 180 seconds stops with a message.
-- Preview Results showed only the count and never the rows. A query that fails now shows its error and no longer shows zero rows.
-- The guide capture tool stops only the processes that it started, by process id. It no longer stops PowerShell processes by command-line pattern, which could end the window of another session. A new guard test fails when a tool script stops a process by a pattern.
+- Load the collection list with one query, and load rules in the background.
+- Stop a collection list load after 180 seconds with a message.
+- Show the error, not zero rows, when a preview query fails.
+- Stop only the processes the guide capture tool started.
 
 ## [2026.11.18.0031] - 2026-11-18
 
