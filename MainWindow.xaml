@@ -342,6 +342,7 @@
                              FontSize="12"
                              Padding="6,4,6,4"
                              Margin="8,0,8,0"
+                             ToolTip="Show only the rows that match the text. Collections matches name, ID, and comment. Templates matches category and name."
                              Controls:TextBoxHelper.Watermark="Filter by name..."/>
 
                     <ComboBox x:Name="cboCollectionFilter"
@@ -494,7 +495,7 @@
 
                     <!-- LEFT: collections and reusable site queries -->
                     <TabControl Controls:HeaderedControlHelper.HeaderFontSize="13" x:Name="tabWqlSource" Grid.Column="0" Margin="0,0,8,0">
-                        <TabItem><TabItem.Header><TextBlock Text="Collections" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
+                        <TabItem ToolTip="Choose a collection from the tree to edit its query rules."><TabItem.Header><TextBlock Text="Collections" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
                             <DockPanel Margin="0,0,0,0">
                                 <Grid DockPanel.Dock="Top" Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
@@ -502,12 +503,14 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="txtWqlCollectionId" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
+                                             ToolTip="Enter the ID of one collection, then select Open by ID to load it and its query rules."
                                              Controls:TextBoxHelper.Watermark="Collection ID (open one collection)"/>
                                     <Button x:Name="btnOpenWqlCollection" Grid.Column="1" Content="Open by ID"
                                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100"
                                             ToolTip="Load one collection and its query rules."/>
                                 </Grid>
                                 <TextBox x:Name="txtWqlTreeFilter" DockPanel.Dock="Top" FontSize="12" Padding="6,4,6,4" Margin="0,8,0,8"
+                                         ToolTip="Show only the collections whose name or ID matches the text."
                                          Controls:TextBoxHelper.Watermark="Filter collections by name or ID..."/>
                                 <Border BorderThickness="1"
                                         BorderBrush="{DynamicResource MahApps.Brushes.Gray8}"
@@ -520,7 +523,7 @@
                                 </Border>
                             </DockPanel>
                         </TabItem>
-                        <TabItem x:Name="tabSiteQueries"><TabItem.Header><TextBlock Text="Site Queries" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
+                        <TabItem x:Name="tabSiteQueries" ToolTip="Show the queries saved on the site. Load one into the editor, or save the editor contents as a new one."><TabItem.Header><TextBlock Text="Site Queries" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
                             <Grid Margin="4">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -536,6 +539,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="txtSavedQueryFilter" Grid.Column="0" FontSize="12" Padding="6,4,6,4" Margin="0,0,8,0"
+                                             ToolTip="Show only the saved queries whose name, ID, or comment matches the text."
                                              Controls:TextBoxHelper.Watermark="Filter saved queries..."/>
                                     <Button x:Name="btnRefreshSavedQueries" Grid.Column="1" Content="Refresh"
                                             Style="{StaticResource SquareInlineButtonStyle}" MinWidth="76"
@@ -554,9 +558,11 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 <TextBox x:Name="txtSavedQueryName" Grid.Row="2" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,6"
+                                         ToolTip="Enter the name that Save as New gives the query, or the new name that Update Saved applies."
                                          Controls:TextBoxHelper.Watermark="Saved query name"/>
                                 <TextBox x:Name="txtSavedQueryComment" Grid.Row="3" FontSize="12" Padding="6,4,6,4" Margin="0,0,0,6"
                                          MinHeight="42" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                         ToolTip="Enter an optional comment that is saved with the query."
                                          Controls:TextBoxHelper.Watermark="Comments (optional)"/>
                                 <Grid Grid.Row="4" Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
@@ -620,10 +626,10 @@
                         </Border>
 
                         <TextBlock Grid.Row="3" Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
-                        <TextBox x:Name="txtRuleName" Grid.Row="4" FontSize="12" Padding="6,4,6,4" Height="26"/>
+                        <TextBox x:Name="txtRuleName" Grid.Row="4" FontSize="12" Padding="6,4,6,4" Height="26" ToolTip="Enter the name of the rule that Add Rule creates, or the new name that Update Rule applies."/>
 
                         <TextBlock Grid.Row="5" Text="Query" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
-                        <TextBox x:Name="txtWqlEditor" Grid.Row="6" Style="{StaticResource WqlEditorStyle}"
+                        <TextBox x:Name="txtWqlEditor" Grid.Row="6" Style="{StaticResource WqlEditorStyle}" ToolTip="Enter the WQL of the query rule. Validate Query checks it against the site."
                                  Background="{DynamicResource MahApps.Brushes.ThemeBackground}"
                                  Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"
                                  BorderThickness="1"
@@ -662,7 +668,7 @@
                     <TabControl Controls:HeaderedControlHelper.HeaderFontSize="13" x:Name="tabTemplateKind" Grid.Column="0"
                                 BorderThickness="0"
                                 Background="{DynamicResource MahApps.Brushes.ThemeBackground}">
-                        <TabItem><TabItem.Header><TextBlock Text="Operational" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
+                        <TabItem ToolTip="Show the ready-made queries that need no parameters."><TabItem.Header><TextBlock Text="Operational" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
                             <DataGrid x:Name="gridOperationalTemplates"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
@@ -673,7 +679,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
-                        <TabItem><TabItem.Header><TextBlock Text="Parameterized" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
+                        <TabItem ToolTip="Show the templates that need parameter values before the query is complete."><TabItem.Header><TextBlock Text="Parameterized" Style="{StaticResource TabHeaderText}" Foreground="{DynamicResource MahApps.Brushes.ThemeForeground}"/></TabItem.Header>
                             <DataGrid x:Name="gridParameterizedTemplates"
                                       Style="{StaticResource ViewDataGrid}"
                                       ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
@@ -764,7 +770,7 @@
                                    HorizontalAlignment="Center"
                                    Margin="0,6,0,0"
                                    Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-                        <Button x:Name="btnCancelWork" Content="Cancel" Style="{StaticResource SquareInlineButtonStyle}"
+                        <Button x:Name="btnCancelWork" Content="Cancel" Style="{StaticResource SquareInlineButtonStyle}" ToolTip="Stop the running operation. Nothing is changed."
                                 Width="100" Height="26" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>

@@ -4,7 +4,7 @@
 
 ## [2026.11.20.0032] - 2026-11-20
 
-## 10 changes: one-query collection list, row preview, ConfigMgr wording
+## 11 changes: one-query collection list, row preview, ConfigMgr wording
 
 ### Changed
 
@@ -14,6 +14,7 @@
 - Write operational and parameterized templates in full on the status line.
 - Use ConfigMgr terms in window text, README and guide.
 - Correct the guide text next to the WQL buttons.
+- Add tooltips to buttons and fields.
 
 ### Fixed
 
