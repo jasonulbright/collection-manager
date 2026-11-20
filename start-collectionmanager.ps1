@@ -2011,7 +2011,7 @@ function Show-NewCollectionDialog {
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <TextBlock Text="Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBox x:Name="txtName" FontSize="12" Padding="6,4,6,4"
+            <TextBox x:Name="txtName" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the name of the new device collection."
                      Controls:TextBoxHelper.Watermark="For example, Workstations - Pilot Ring"/>
 
             <TextBlock Text="Limiting Collection" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
@@ -2034,11 +2034,11 @@ function Show-NewCollectionDialog {
             </Grid>
 
             <TextBlock Text="Comment" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBox x:Name="txtComment" FontSize="12" Padding="6,4,6,4"
+            <TextBox x:Name="txtComment" FontSize="12" Padding="6,4,6,4" ToolTip="Enter an optional comment for the new collection."
                      Controls:TextBoxHelper.Watermark="Optional"/>
 
             <TextBlock Text="Refresh Type" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <ComboBox x:Name="cboRefresh" FontSize="12">
+            <ComboBox x:Name="cboRefresh" FontSize="12" ToolTip="Select how ConfigMgr refreshes the membership: Manual, Periodic (schedule), Continuous (incremental), or Both.">
                 <ComboBoxItem Content="Manual"/>
                 <ComboBoxItem Content="Periodic"/>
                 <ComboBoxItem Content="Continuous"/>
@@ -2187,7 +2187,7 @@ function Show-CopyCollectionDialog {
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,16,0,0">
             <TextBlock Text="New Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBox x:Name="txtNewName" FontSize="12" Padding="6,4,6,4"
+            <TextBox x:Name="txtNewName" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the name of the copy. The dialog starts with Copy of and the source name."
                      Controls:TextBoxHelper.Watermark="Name of the new collection"/>
         </StackPanel>
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
@@ -2353,11 +2353,11 @@ function Show-EditMembershipDialog {
         </DataGrid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-            <TextBox x:Name="txtAddDevice" Width="240" FontSize="12" Padding="6,4,6,4"
+            <TextBox x:Name="txtAddDevice" Width="240" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the exact name of one device to add as a direct member."
                      Controls:TextBoxHelper.Watermark="Device name"/>
-            <Button x:Name="btnAddDevice"    Content="Add Direct Member"  Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="160"/>
-            <Button x:Name="btnRemoveSel"    Content="Remove Selected"    Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="140"/>
-            <Button x:Name="btnReloadMembers" Content="Reload"            Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="100"/>
+            <Button x:Name="btnAddDevice"    Content="Add Direct Member"  Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="160" ToolTip="Add the device named in the box to this collection as a direct member."/>
+            <Button x:Name="btnRemoveSel"    Content="Remove Selected"    Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="140" ToolTip="Remove the selected rows from the direct members of this collection. Asks you to confirm first."/>
+            <Button x:Name="btnReloadMembers" Content="Reload"            Style="{StaticResource DialogButton}" Margin="8,0,0,0" MinWidth="100" ToolTip="Read the direct members of this collection from the site again."/>
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
@@ -2554,7 +2554,7 @@ function Show-ApplyTemplateDialog {
         </StackPanel>
         <StackPanel Grid.Row="2" Margin="0,12,0,0">
             <TextBlock Text="Rule Name" FontSize="11" FontWeight="Bold" Margin="0,0,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-            <TextBox x:Name="txtRuleName" FontSize="12" Padding="6,4,6,4"/>
+            <TextBox x:Name="txtRuleName" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the name of the query rule that is added to the target collection."/>
         </StackPanel>
         <TextBlock Grid.Row="3" Text="Expanded WQL" FontSize="11" FontWeight="Bold" Margin="0,12,0,4" Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
         <TextBox x:Name="txtExpanded" Grid.Row="4" IsReadOnly="True"
@@ -2895,8 +2895,8 @@ function Show-OptionsDialog {
 
         <Border Grid.Column="0" Grid.Row="0" Padding="6,12,0,12">
             <StackPanel>
-                <Button x:Name="btnCatConnection" Content="Connection" Style="{StaticResource CategoryRowStyle}"/>
-                <Button x:Name="btnCatAbout"      Content="About"      Style="{StaticResource CategoryRowStyle}"/>
+                <Button x:Name="btnCatConnection" Content="Connection" Style="{StaticResource CategoryRowStyle}" ToolTip="Show the site code and SMS Provider settings."/>
+                <Button x:Name="btnCatAbout"      Content="About"      Style="{StaticResource CategoryRowStyle}" ToolTip="Show the version and license of Collection Manager."/>
             </StackPanel>
         </Border>
 
@@ -2907,11 +2907,11 @@ function Show-OptionsDialog {
                 <TextBlock Text="Configuration Manager Connection" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock x:Name="lblSiteCode" Text="Site Code" FontSize="14" FontWeight="Bold" Margin="0,4,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4"
+                <TextBox x:Name="txtSiteCode" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the three-character site code of the ConfigMgr site."
                          Controls:TextBoxHelper.Watermark="For example, P01" Width="120" HorizontalAlignment="Left"/>
                 <TextBlock x:Name="lblSmsProvider" Text="SMS Provider FQDN" FontSize="14" FontWeight="Bold" Margin="0,12,0,2"
                            Foreground="{DynamicResource MahApps.Brushes.Gray1}"/>
-                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4"
+                <TextBox x:Name="txtSmsProvider" FontSize="12" Padding="6,4,6,4" ToolTip="Enter the FQDN of the SMS Provider computer."
                          Controls:TextBoxHelper.Watermark="For example, cm01.contoso.com"/>
                 <TextBlock Text="Used as the root of the site drive. Collection Manager reads (Get-CMDeviceCollection) and writes (New, Set, Remove). The account that runs this app needs the matching ConfigMgr permissions."
                            FontSize="11" TextWrapping="Wrap" Margin="0,16,0,0"
