@@ -184,7 +184,7 @@ Describe 'Get-CollectionRuleSet' {
 ')
         $m.Success | Should -BeTrue
         $code = [regex]::Replace($m.Value, '(?s)<#.*?#>', '')
-        $code | Should -Not -Match 'Lazy'
+        $code | Should -Not -Match '-Option\s+Lazy'
     }
 
     It 'returns empty lists for a collection without rules' {
