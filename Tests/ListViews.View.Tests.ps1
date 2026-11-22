@@ -11,6 +11,7 @@ BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     Import-AppModule
     Add-Type -AssemblyName PresentationFramework
+    if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { throw 'These tests create WPF controls and need an STA thread. Start the host with -STA.' }
     $script:Stubs = New-CmStub -Name Get-CMQuery
     Mock Write-Log {} -ModuleName CollectionManagerCommon
 

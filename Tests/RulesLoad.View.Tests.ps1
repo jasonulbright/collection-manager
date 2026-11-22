@@ -4,8 +4,8 @@
 # rule grids, the rule counts and the WQL Editor rule list. These tests run that whole path
 # with real WPF controls and read what the user would see: the number of rows in each control.
 #
-# The site fake behaves like the real site: a read with the lazy option returns the collection
-# with an EMPTY CollectionRules property (checked on the lab). A test that only checks the call
+# The site fake behaves like the real site: a read with the lazy or the fast option returns the collection
+# with an EMPTY CollectionRules property (lazy: checked on the lab; fast: skips lazy properties). A test that only checks the call
 # shape passed while the window showed no rules. These tests check the rows.
 #
 # The script cannot be dot-sourced (it opens the window), so each function and event handler is
@@ -15,6 +15,8 @@ BeforeAll {
     . "$PSScriptRoot\TestHelpers.ps1"
     Import-AppModule
     Add-Type -AssemblyName PresentationFramework
+    # WPF controls need an STA thread. Windows PowerShell and PowerShell 7 start in STA; a harness that starts MTA must add -STA.
+    if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { throw 'These tests create WPF controls and need an STA thread. Start the host with -STA.' }
     $script:Stubs = New-CmStub -Name Invoke-CMWmiQuery
     Mock Write-Log {} -ModuleName CollectionManagerCommon
 
@@ -53,11 +55,11 @@ BeforeAll {
             (New-SiteRule Exclude 'Exc A' 'MCM00003'))
         'MCM00002' = @()
     }
-    # The fake site: a lazy read gives no rules, as the real provider does.
+    # The fake site: a lazy or fast read gives no rules, as the real provider does.
     Mock Invoke-CMWmiQuery {
         if ([string]$Query -match 'CollectionType = 2') { return @($global:FxList) }
         $id = [regex]::Match([string]$Query, "CollectionID = '([^']+)'").Groups[1].Value
-        $rules = if ($Option -eq 'Lazy') { @() } else { @($global:FxSite[$id]) }
+        $rules = if ($Option -in 'Lazy', 'Fast') { @() } else { @($global:FxSite[$id]) }
         [PSCustomObject]@{ CollectionID = $id; CollectionRules = $rules }
     } -ModuleName CollectionManagerCommon
 }
@@ -255,7 +257,7 @@ Describe 'The collection list reaches the grid' {
     }
 
     It 'shows the one collection of a site that has one (a single object is not a list)' {
-        $script:BgState.Result.Collections = @($script:BgState.Result.Collections[1])
+        $script:BgState.Result.Collections = $script:BgState.Result.Collections[1]
         & $script:RefreshTick
         $gridCollections.Items.Count | Should -Be 1
         $gridCollections.Items[0].Name | Should -Be 'All Servers'
