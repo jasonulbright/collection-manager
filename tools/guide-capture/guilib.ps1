@@ -60,8 +60,10 @@ function Move-MouseAway {
     [NativeUi]::mouse_event(1, -3, -3, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 300
     $tipCond = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::ToolTip)
     $end = (Get-Date).AddSeconds(8)
-    while ((Get-Date) -lt $end -and $root.FindFirst('Descendants', $tipCond)) { Start-Sleep -Milliseconds 400 }
-    if ($root.FindFirst('Descendants', $tipCond)) { Log 'TOOLTIP still shown after the mouse moved away; the next shot holds it' }
+    # A tooltip counts only while it is on screen: the tree also lists tooltip elements that are not shown.
+    $tipShown = { @($root.FindAll('Descendants', $tipCond) | Where-Object { -not $_.Current.IsOffscreen }).Count -gt 0 }
+    while ((Get-Date) -lt $end -and (& $tipShown)) { Start-Sleep -Milliseconds 400 }
+    if (& $tipShown) { Log 'TOOLTIP still shown after the mouse moved away; the next shot holds it' }
 }
 function Shot($Win, [string]$Name, [switch]$Hover) {
     if (-not $Hover) { Move-MouseAway; if ($Win.Current.ClassName -eq 'MetroWindow') { try { (Get-El $Win 'txtLog' -Quiet).SetFocus() } catch { $null = $_ } } }
