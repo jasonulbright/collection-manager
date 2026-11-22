@@ -76,7 +76,8 @@ if (Test-Path -LiteralPath $ledger) {
 }
 '@
 $repo = (Resolve-Path (Join-Path $here '..\..')).Path
-$app = Split-Path $repo -Leaf
+# The lab folder and the task carry the repository name, not the name of the folder that this copy runs from (a worktree name showed in the images).
+$app = 'collection-manager'
 $images = Join-Path $repo 'docs\images'
 . $CredentialScript
 $prefsFile = 'CollectionManager.prefs.json'
