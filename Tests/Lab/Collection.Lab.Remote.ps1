@@ -75,6 +75,11 @@ try {
     Add-Result 'a wildcard name adds nothing' ($star -eq $false) ''
     $rules = @((Get-CMDeviceCollection -CollectionId $a.CollectionID).CollectionRules)
     Add-Result 'exactly one direct rule exists' ($rules.Count -eq 1) "rules=$($rules.Count)"
+    # The read that the window uses for the rule grids and the WQL Editor rule list. A wrong read option gives no rule here, and the window shows an empty list.
+    $set = Get-CollectionRuleSet -CollectionId $a.CollectionID
+    Add-Result 'Get-CollectionRuleSet returns the direct rule' (@($set.Direct).Count -eq 1) "direct=$(@($set.Direct).Count)"
+    $listed = @(Get-AllDeviceCollections | Where-Object { $_.CollectionID -eq $a.CollectionID })
+    Add-Result 'Get-AllDeviceCollections lists the new collection by name' ($listed.Count -eq 1 -and $listed[0].Name -eq $nameA) "found=$($listed.Count)"
     $whatif = Add-DirectMember -CollectionId $b.CollectionID -DeviceName 'CLIENT01' -WhatIf
     Add-Result 'WhatIf adds no member' ($whatif -eq $false -and @((Get-CMDeviceCollection -CollectionId $b.CollectionID).CollectionRules | Where-Object { $_ }).Count -eq 0) ''
 
@@ -90,6 +95,8 @@ try {
     Add-QueryRule -CollectionId $b.CollectionID -RuleName 'ZZTEST rule' -QueryExpression $wql
     $qr = @(Get-CollectionQueryRules -CollectionId $b.CollectionID)
     Add-Result 'add query rule' ($qr.Count -eq 1 -and $qr[0].RuleName -eq 'ZZTEST rule') "rules=$($qr.Count)"
+    $set = Get-CollectionRuleSet -CollectionId $b.CollectionID
+    Add-Result 'Get-CollectionRuleSet returns the query rule' (@($set.Query).Count -eq 1 -and $set.Query[0].RuleName -eq 'ZZTEST rule') "query=$(@($set.Query).Count)"
 
     $wql2 = 'select SMS_R_System.ResourceId, SMS_R_System.Name from SMS_R_System where SMS_R_System.Name like "ZZTEST2%"'
     Update-QueryRule -CollectionId $b.CollectionID -OldRuleName 'ZZTEST rule' -NewRuleName 'ZZTEST rule 2' -NewQueryExpression $wql2
@@ -109,6 +116,8 @@ try {
     Add-ExcludeRule -CollectionId $b.CollectionID -ExcludeCollectionId $c.CollectionID
     $rules = @((Get-CMDeviceCollection -CollectionId $b.CollectionID).CollectionRules)
     Add-Result 'add include and exclude rule' ($rules.Count -eq 2) "rules=$($rules.Count)"
+    $set = Get-CollectionRuleSet -CollectionId $b.CollectionID
+    Add-Result 'Get-CollectionRuleSet returns the include and the exclude rule' (@($set.Include).Count -eq 1 -and @($set.Exclude).Count -eq 1 -and $set.Include[0].IncludeCollectionID -eq $a.CollectionID -and $set.Exclude[0].ExcludeCollectionID -eq $c.CollectionID) "include=$(@($set.Include).Count) exclude=$(@($set.Exclude).Count)"
     Invoke-CollectionEvaluation -CollectionId $b.CollectionID
     Add-Result 'evaluation triggers without an error' $true ''
 
