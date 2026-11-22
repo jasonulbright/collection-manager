@@ -738,7 +738,8 @@ function Update-SiteSavedQueryList {
 
     if (-not $gridSavedQueries) { return }
     $needle = ([string]$txtSavedQueryFilter.Text).Trim()
-    $rows = if ($needle) {
+    # @() around the whole expression: one match must stay an array, because ItemsSource takes no single object.
+    $rows = @(if ($needle) {
         @($script:SiteSavedQueries | Where-Object {
             ([string]$_.Name).IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or
             ([string]$_.QueryID).IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 -or
@@ -746,7 +747,7 @@ function Update-SiteSavedQueryList {
         })
     } else {
         @($script:SiteSavedQueries)
-    }
+    })
 
     $gridSavedQueries.ItemsSource = $rows
     if ($SelectQueryId) {
