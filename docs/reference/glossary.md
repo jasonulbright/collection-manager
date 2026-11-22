@@ -27,6 +27,7 @@ None.
 | WQL | The query language of the site. |
 | Template | A ready-made query. An operational template is fixed. A parameterized template has parameters. |
 | SMS Provider | The server role that gives access to the site data. |
+| Site folder | The folder `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager`. It holds the settings and the reports of one site. |
 
 ## Steps
 

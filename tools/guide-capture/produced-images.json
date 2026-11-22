@@ -1,5 +1,5 @@
 {
-  "Count": 56,
+  "Count": 58,
   "Images": [
     "after-remove-cancel.png",
     "builtin-blocked.png",
@@ -21,6 +21,7 @@
     "dialog-edit-membership.png",
     "dialog-new-collection.png",
     "dialog-remove-collection.png",
+    "footer-site-note.png",
     "light-collection-selected.png",
     "light-collections-filter-list.png",
     "light-collections.png",
@@ -40,6 +41,7 @@
     "options-about.png",
     "options-connection.png",
     "options-empty.png",
+    "options-site.png",
     "refresh-running.png",
     "refresh-without-connection.png",
     "start-first-run.png",

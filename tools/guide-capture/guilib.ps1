@@ -84,12 +84,13 @@ function Move-MouseAway($Win) {
     }
     if ($root.FindFirst('Descendants', $tipCond)) { Log 'TOOLTIP still shown after the mouse moved away; the next shot holds it' }
 }
-function Shot($Win, [string]$Name, [switch]$Hover) {
+# -PadRight widens the image to the right, so that a tooltip that is wider than its window shows in full.
+function Shot($Win, [string]$Name, [switch]$Hover, [int]$PadRight = 0) {
     if (-not $Hover) { Move-MouseAway $Win; if ($Win.Current.ClassName -eq 'MetroWindow') { try { (Get-El $Win 'txtLog' -Quiet).SetFocus() } catch { $null = $_ } } }
     Start-Sleep -Milliseconds 1300
     $r = $Win.Current.BoundingRectangle
     $x = [int][Math]::Max(0, $r.X); $y = [int][Math]::Max(0, $r.Y)
-    $w = [int][Math]::Min($r.Width, [System.Windows.Forms.SystemInformation]::VirtualScreen.Width - $x)
+    $w = [int][Math]::Min($r.Width + $PadRight, [System.Windows.Forms.SystemInformation]::VirtualScreen.Width - $x)
     $h = [int][Math]::Min($r.Height, [System.Windows.Forms.SystemInformation]::VirtualScreen.Height - $y)
     $bmp = New-Object System.Drawing.Bitmap $w, $h; $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.CopyFromScreen($x, $y, 0, 0, (New-Object System.Drawing.Size $w, $h)); $g.Dispose()

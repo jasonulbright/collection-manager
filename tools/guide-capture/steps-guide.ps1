@@ -194,7 +194,7 @@ Section 'site' {
   $box = Get-El $d 'txtSiteCode'
   $r = $box.Current.BoundingRectangle; [void][NativeUi]::SetCursorPos([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2)); Start-Sleep -Milliseconds 300
   [NativeUi]::mouse_event(1, 2, 2, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 300; [NativeUi]::mouse_event(1, -2, -2, 0, [UIntPtr]::Zero); Start-Sleep -Milliseconds 2500
-  Shot $d 'options-site' -Hover
+  Shot $d 'options-site' -Hover -PadRight 260
   Invoke-El (Get-El $d 'btnCancel'); Start-Sleep -Seconds 1
   Import-Module (Join-Path $appDir 'Lib\SuiteCommon\SuiteCommon.psd1') -DisableNameChecking
   [void](Set-SuiteActiveSite -SiteCode 'CD2' -DataRoot (Get-SuiteDataRoot))

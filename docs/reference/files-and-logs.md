@@ -23,8 +23,11 @@ None.
 | `Logs\CollectionManager-<yyyyMMdd-HHmmss>.log` | The log of one session. Each read, each change and each failure. | During the session. |
 | `Logs\CollectionManager-startup-<yyyyMMdd-HHmmss>.txt` | The PowerShell transcript of the start. | At the start. |
 | `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager\prefs.json` | The site code and the SMS Provider of the site. | You select **OK** in Options. |
+| `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager\reports\CollectionManager-Collections-<date>-<time>.csv` or `.html` | An export of the Collections view. | **Export CSV** or **Export HTML**. |
 
-With no site chosen, the tool uses `Reports\` beside the script for the exports and keeps the site settings in `CollectionManager.prefs.json`. The first start for a site copies the old `Reports` files into the site folder and keeps the old files. See [Sites](../core/options.md#sites).\operational-collections.json` and `Templates\parameterized-templates.json`. It does not write to them.
+With no site chosen, the tool uses `Reports\` beside the script for the exports and keeps the site settings in `CollectionManager.prefs.json`. The first start for a site copies the old `Reports` files into the site folder and keeps the old files. See [Sites](../core/options.md#sites).
+
+The tool reads `Templates\operational-collections.json` and `Templates\parameterized-templates.json`. It does not write to them.
 
 ## Steps
 

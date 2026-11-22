@@ -15,6 +15,10 @@ The AppPackager Suite launcher chooses the site. The tool keeps its site setting
 
 The [user guide](docs/index.md) walks every view, dialog and setting with images of the running window. [Capture the images again](docs/reference/capture-images.md) shows the one command that regenerates them.
 
+## Sites
+
+The AppPackager Suite launcher chooses the site. The tool keeps its site settings and its reports per site under `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager`, copies the old data once at the first start after an update, and keeps the old files.
+
 ## Requirements
 
 - Windows 10 / 11
