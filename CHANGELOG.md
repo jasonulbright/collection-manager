@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [2026.11.22.0034] - 2026-11-22
+
+## 1 fix: a site with one saved query loads
+
+### Fixed
+
+- Load the Saved Queries list when the site has exactly one saved query.
+
+### Changed
+
+- Retake 3 guide images without a stray tooltip, with a neutral lab folder name.
+
 ## [2026.11.21.0033] - 2026-11-21
 
 ## 1 fix: the rules of a collection show again
