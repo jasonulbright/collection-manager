@@ -101,7 +101,7 @@ function Find-All([string]$Name) {
     @($root.FindAll('Descendants', $cond))
 }
 function Find-Last([string]$Name, [int]$Seconds = 15) {
-    $end = (Get-Date).AddSeconds($Seconds); do { $a = Find-All $Name; if ($a.Count) { return $a[$a.Count - 1] }; Start-Sleep -Milliseconds 400 } while ((Get-Date) -lt $end); throw "no window $Name"
+    $end = (Get-Date).AddSeconds($Seconds); do { $a = Find-All $Name; if ($a.Count) { return $a[$a.Count - 1] }; Start-Sleep -Milliseconds 400 } while ((Get-Date) -lt $end); Log ('windows now: ' + ((@($root.FindAll('Descendants', (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)))) | ForEach-Object { $_.Current.Name }) -join ' | ')); throw "no window $Name"
 }
 function Find-Role($Scope, [string]$Type, [string]$Name) {
     $ct = [System.Windows.Automation.ControlType]::($Type)
