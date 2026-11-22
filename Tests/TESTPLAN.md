@@ -24,6 +24,7 @@ Window tests: `Window.Tests.ps1` opens a window only when `SUITE_ALLOW_WINDOW_TE
 | Real cmdlet signatures | `CmCmdlet.Contract.Tests.ps1` | Every ConfigMgr call names only parameters that the real cmdlet has. Runs where the console is installed |
 | Start without the console | `Startup.Tests.ps1` | Plain message, `$false`, no raw exception |
 | Windows | `Window.Tests.ps1` | Main window: names, titles, the dialogs' XAML parses and has named controls and distinct titles, no clipped text and nothing off screen at 1024x720 and 1440x900 in both themes and all three views, text and control contrast |
+| View data | `RulesLoad.View.Tests.ps1`, `ListViews.View.Tests.ps1` | The rows that reach the controls, counted on real WPF controls that are not shown. The rules pass: a site fake that returns no rules for a lazy read, `Get-CollectionRuleSet`, the rules index, then the rule grids, the rule counts and the WQL Editor rule list. The saved site queries grid (none, one, many, filter, failed read). The shipped templates in the two template grids |
 | Lab | `Lab/Invoke-CollectionLab.ps1` | ZZTEST- collections and one ZZTEST- saved query on CM01: create, copy, properties, member, query rules (including a refused update), include, exclude, evaluate, built-in protection, WhatIf, remove. Checks that no other collection changed |
 
 ## Defects found
