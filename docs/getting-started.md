@@ -20,7 +20,7 @@ Use it to create or copy collections, to write and test WQL query rules, and to 
 
 ### Start the tool
 
-1. Extract the release zip to a folder that you can write to. The tool saves its settings, logs and reports in that folder.
+1. Extract the release zip to a folder that you can write to. In that folder, the tool saves the global settings and the session logs. It saves the site settings and the reports per site under `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager`.
 2. Right-click `start-collectionmanager.ps1` and select **Run with PowerShell**. Or run this command:
 
 ```powershell
@@ -38,7 +38,7 @@ If you select **Refresh** before you set the connection, the log asks you to ope
 ### Set the connection
 
 1. Select **Options** in the sidebar.
-2. Type the **Site Code**, for example `MCM`.
+2. Type the **Site Code**, for example `MCM`. When the AppPackager Suite launcher chose a site, the field is read-only. See [Sites](core/options.md#sites).
 3. Type the **SMS Provider FQDN**, for example `cm01.contoso.com`.
 4. Select **OK**.
 

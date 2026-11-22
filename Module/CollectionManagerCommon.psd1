@@ -51,6 +51,9 @@
         'Get-ParameterizedTemplates'
         'Expand-TemplateParameters'
 
+        # Site data
+        'Resolve-CmReportsPath'
+
         # Export
         'Export-CollectionCsv'
         'Export-CollectionHtml'

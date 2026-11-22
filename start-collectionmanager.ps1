@@ -85,10 +85,16 @@ if (-not (Get-Command Initialize-Logging -ErrorAction SilentlyContinue)) {
 # =============================================================================
 $global:PrefsPath = Join-Path $PSScriptRoot 'CollectionManager.prefs.json'
 
+# The site is chosen in the suite launcher. With a site, the first start copies the old site data into
+# sites\<SITE>\tools\collection-manager (old files stay). With no site the tool keeps its old paths.
+$script:Site = Resolve-SuiteToolSite -Tool 'collection-manager' -ToolRoot $PSScriptRoot -LegacyPrefsPath $global:PrefsPath
+
 function Get-CmPreferences {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Returns the full preferences hashtable by design.')]
     param()
-    return Read-SuiteSettings -Path $global:PrefsPath -Defaults @{
+    $site = if ($script:Site) { $script:Site } else { [pscustomobject]@{ Active = $false } }
+    # With a site, SiteCode and SMSProvider come from the prefs of the site. The other keys stay in the old file.
+    return Read-SuiteToolPrefs -Path $global:PrefsPath -Site $site -SiteKeys @('SiteCode', 'SMSProvider') -Defaults @{
         DarkMode    = $true
         SiteCode    = ''
         SMSProvider = ''
@@ -100,21 +106,26 @@ function Get-CmPreferences {
 function Save-CmPreferences {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification='Writes the full preferences hashtable by design.')]
     param([Parameter(Mandatory)][hashtable]$Prefs)
-    $null = Save-SuiteSettings -Path $global:PrefsPath -Settings $Prefs
+    $site = if ($script:Site) { $script:Site } else { [pscustomobject]@{ Active = $false } }
+    $null = Save-SuiteToolPrefs -Path $global:PrefsPath -Settings $Prefs -Site $site -SiteKeys @('SiteCode', 'SMSProvider')
 }
 
 $global:Prefs = Get-CmPreferences
 
-# The suite launcher hands its site code and provider to each tool it starts.
-# A value saved in this tool wins; the launcher value fills an empty one.
-if (-not $global:Prefs.SiteCode    -and $env:SUITE_CM_SITECODE) { $global:Prefs.SiteCode    = [string]$env:SUITE_CM_SITECODE }
-if (-not $global:Prefs.SMSProvider -and $env:SUITE_CM_PROVIDER) { $global:Prefs.SMSProvider = [string]$env:SUITE_CM_PROVIDER }
+# The suite launcher hands its site code and provider to each tool it starts. With a site, the site decides and
+# these two variables are ignored here. With no site, a value saved in this tool wins and the variable fills an empty one.
+if (-not $script:Site.Active) {
+    if (-not $global:Prefs.SiteCode    -and $env:SUITE_CM_SITECODE) { $global:Prefs.SiteCode    = [string]$env:SUITE_CM_SITECODE }
+    if (-not $global:Prefs.SMSProvider -and $env:SUITE_CM_PROVIDER) { $global:Prefs.SMSProvider = [string]$env:SUITE_CM_PROVIDER }
+}
 
 # =============================================================================
 # Tool log.
 # =============================================================================
 $script:ToolLogPath = Join-Path $__txDir ('CollectionManager-{0}.log' -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 Initialize-Logging -LogPath $script:ToolLogPath
+if ($script:Site.Active) { Write-Log ('Site {0}; data in {1}' -f $script:Site.SiteFolder, $script:Site.ToolFolder) }
+elseif ($script:Site.Reason) { Write-Log ('No site data folder: {0}' -f $script:Site.Reason) }
 
 # =============================================================================
 # Load XAML and resolve named elements.
@@ -2795,9 +2806,7 @@ $btnExportCsv.Add_Click({
     $sfd = New-Object Microsoft.Win32.SaveFileDialog
     $sfd.Filter = 'CSV files (*.csv)|*.csv'
     $sfd.FileName = ('CollectionManager-{0}-{1}.csv' -f $info.Name, (Get-Date -Format 'yyyyMMdd-HHmmss'))
-    $reportsDir = Join-Path $PSScriptRoot 'Reports'
-    if (-not (Test-Path -LiteralPath $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null }
-    $sfd.InitialDirectory = $reportsDir
+    $sfd.InitialDirectory = Resolve-CmReportsPath -ToolRoot $PSScriptRoot -Site $script:Site -Create
     if ($sfd.ShowDialog() -eq $true) {
         Export-CollectionCsv -Collections @($info.Rows) -Columns $info.Columns -OutputPath $sfd.FileName
         Add-LogLine ('Exported CSV: {0}' -f $sfd.FileName)
@@ -2813,9 +2822,7 @@ $btnExportHtml.Add_Click({
     $sfd = New-Object Microsoft.Win32.SaveFileDialog
     $sfd.Filter = 'HTML files (*.html)|*.html'
     $sfd.FileName = ('CollectionManager-{0}-{1}.html' -f $info.Name, (Get-Date -Format 'yyyyMMdd-HHmmss'))
-    $reportsDir = Join-Path $PSScriptRoot 'Reports'
-    if (-not (Test-Path -LiteralPath $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir -Force | Out-Null }
-    $sfd.InitialDirectory = $reportsDir
+    $sfd.InitialDirectory = Resolve-CmReportsPath -ToolRoot $PSScriptRoot -Site $script:Site -Create
     if ($sfd.ShowDialog() -eq $true) {
         Export-CollectionHtml -Collections @($info.Rows) -Columns $info.Columns -OutputPath $sfd.FileName
         Add-LogLine ('Exported HTML: {0}' -f $sfd.FileName)
@@ -2963,6 +2970,11 @@ function Show-OptionsDialog {
     $btnCancel        = $dlg.FindName('btnCancel')
 
     $txtSiteCode.Text    = [string]$global:Prefs.SiteCode
+    if ($script:Site.Active) {
+        # The launcher chooses the site. A tool that is open keeps its site until it restarts.
+        $txtSiteCode.IsReadOnly = $true
+        $txtSiteCode.ToolTip = 'The site is chosen in the AppPackager Suite launcher. Restart this tool after you change it.'
+    }
     $txtSmsProvider.Text = [string]$global:Prefs.SMSProvider
 
     $btnCatConnection.Add_Click({
@@ -2976,6 +2988,7 @@ function Show-OptionsDialog {
 
     $btnOk.Add_Click({
         $newSite     = ([string]$txtSiteCode.Text).Trim()
+        if ($script:Site.Active) { $newSite = [string]$global:Prefs.SiteCode }
         $newProvider = ([string]$txtSmsProvider.Text).Trim()
         $connectionChanged = ($newSite -ne [string]$global:Prefs.SiteCode) -or
                              ($newProvider -ne [string]$global:Prefs.SMSProvider)
@@ -3067,6 +3080,8 @@ $window.Add_Loaded({
     try { [void](Initialize-SuiteFooter -Window $window -StatusName 'txtStatus' -OnOpenOptions { Show-OptionsDialog }) }
     catch { Write-Log ('Footer: {0}' -f $_.Exception.Message) -Level ERROR -Quiet; Add-LogLine 'The footer failed. The log file has the details.' }
     Sync-FooterSite
+    $null = Start-SuiteSiteWatch -Window $window -Site $script:Site
+    if ($script:Site.Active) { Add-LogLine ('Site {0}; data in {1}' -f $script:Site.SiteFolder, $script:Site.ToolFolder) }
     Add-LogLine 'Collection Manager ready. Connect to the site for query work, or refresh to load all collections.'
 
     # Auto-load templates so the Templates view is populated on first switch

@@ -4,7 +4,7 @@ This page lists what Collection Manager saves and where.
 
 ## What it does
 
-The tool saves its settings in `CollectionManager.prefs.json` in the folder of the script. The Options dialog writes the file when you select **OK**. The window state is in `CollectionManager.windowstate.json`.
+The tool saves its settings in two places. The global settings (`DarkMode` and `LoadTimeoutSeconds`) are in `CollectionManager.prefs.json` in the folder of the script. When the launcher chose a site, `SiteCode` and `SMSProvider` are in `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager\prefs.json`, for example `sites\AB1\tools\collection-manager\prefs.json`. The Options dialog writes the files when you select **OK**. The window state is in `CollectionManager.windowstate.json`.
 
 ## When to use it
 
@@ -18,8 +18,8 @@ None.
 
 | Key | Option | Default |
 |---|---|---|
-| `SiteCode` | **Site Code** | Empty. |
-| `SMSProvider` | **SMS Provider FQDN** | Empty. |
+| `SiteCode` | **Site Code** | Empty. With a site, the value is the site that the launcher chose, and the field is read-only. |
+| `SMSProvider` | **SMS Provider FQDN** | Empty. Each site keeps its own value. |
 | `DarkMode` | **Dark Theme** switch | `true`. |
 
 `CollectionManager.windowstate.json` keeps the size, the place and the open view of the window.
@@ -29,13 +29,13 @@ None.
 ### Reset the settings
 
 1. Close the tool.
-2. Delete `CollectionManager.prefs.json` and `CollectionManager.windowstate.json`.
+2. Delete `CollectionManager.prefs.json` and `CollectionManager.windowstate.json`. To reset the connection of one site, delete `prefs.json` in the folder of that site too.
 3. If the suite launcher started the tool, clear the environment variables `SUITE_CM_SITECODE` and `SUITE_CM_PROVIDER` too. The tool takes the site code and the provider from them when the settings are empty.
 4. Start the tool. The window of the first start shows.
 
 ## Limits
 
-- The files are in the folder of the script. Extract the tool to a folder that you can write to.
+- The global files are in the folder of the script. Extract the tool to a folder that you can write to.
 
 ## Troubleshooting
 
