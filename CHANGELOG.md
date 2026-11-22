@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Keep reports and site settings per site under the data folder.
+
 ## [2026.11.22.0034] - 2026-11-22
 
 ## 1 fix: a site with one saved query loads

@@ -11,9 +11,13 @@ Ships with a template library: 238 ready-made operational queries and 20 paramet
 
 ![Collection Manager](screenshot.png)
 
-## User guide
+The AppPackager Suite launcher chooses the site. The tool keeps its site settings and its reports per site under `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager`, copies the old data once at the first start after an update, and keeps the old files.
 
 The [user guide](docs/index.md) walks every view, dialog and setting with images of the running window. [Capture the images again](docs/reference/capture-images.md) shows the one command that regenerates them.
+
+## Sites
+
+The AppPackager Suite launcher chooses the site. The tool keeps its site settings and its reports per site under `%LOCALAPPDATA%\AppPackagerData\sites\<SITE>\tools\collection-manager`, copies the old data once at the first start after an update, and keeps the old files.
 
 ## Requirements
 
@@ -30,7 +34,7 @@ The [user guide](docs/index.md) walks every view, dialog and setting with images
    ```powershell
    powershell -ExecutionPolicy Bypass -File start-collectionmanager.ps1
    ```
-3. Select the **Options** button on the sidebar and set your Site Code and SMS Provider.
+3. Select the **Options** button on the sidebar and set your Site Code and SMS Provider. When the suite launcher chose a site, the Site Code is read-only.
 4. Select **Connect Site** to verify the connection without loading the collection inventory. Select **Refresh** when you want the full inventory.
 
 ## Layout
