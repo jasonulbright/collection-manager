@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [2026.11.21.0033] - 2026-11-21
+
+## 1 fix: the rules of a collection show again
+
+### Fixed
+
+- Show the rules of a collection in Query Rules and in the WQL Editor.
+
+### Changed
+
+- Retake the guide images for the rules list and the Preview Results grid.
+
 ## [2026.11.20.0032] - 2026-11-20
 
 ## 11 changes: one-query collection list, row preview, ConfigMgr wording
