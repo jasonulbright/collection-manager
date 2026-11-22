@@ -16,6 +16,24 @@ BeforeAll {
     Mock Write-Log {} -ModuleName CollectionManagerCommon
 
     $script:ShellPath = Join-Path $script:AppRoot 'start-collectionmanager.ps1'
+
+    # A column binds to a property by name. A renamed or missing property leaves the column blank, with no error.
+    # The check reads the column bindings of the grid from MainWindow.xaml and looks for each name on the first row.
+    [xml]$script:MainXaml = Get-Content -LiteralPath (Join-Path $script:AppRoot 'MainWindow.xaml') -Raw
+    $script:MainXamlNs = New-Object System.Xml.XmlNamespaceManager($script:MainXaml.NameTable)
+    $script:MainXamlNs.AddNamespace('w', 'http://schemas.microsoft.com/winfx/2006/xaml/presentation')
+    $script:MainXamlNs.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    function Assert-GridBinding {
+        param($Grid, [string]$GridName)
+        $node = $script:MainXaml.SelectSingleNode(('//w:DataGrid[@x:Name=''{0}'']' -f $GridName), $script:MainXamlNs)
+        if (-not $node) { throw "grid $GridName not found in MainWindow.xaml" }
+        $columns = $node.SelectSingleNode('*[contains(local-name(), ''Columns'')]')
+        $text = if ($columns) { $columns.OuterXml } else { '' }
+        $paths = @([regex]::Matches($text, '\{Binding\s+(?:Path=)?([A-Za-z_][A-Za-z0-9_]*)(?![A-Za-z0-9_]*=)(?=[,}\s])') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+        $paths.Count | Should -BeGreaterThan 0 -Because "the grid $GridName has bound columns"
+        $Grid.Items.Count | Should -BeGreaterThan 0 -Because "the grid $GridName needs a row to check"
+        foreach ($path in $paths) { $null -ne $Grid.Items[0].PSObject.Properties[$path] | Should -BeTrue -Because "a column of $GridName binds to $path" }
+    }
     $ast = [System.Management.Automation.Language.Parser]::ParseFile($script:ShellPath, [ref]$null, [ref]$null)
     foreach ($n in 'Sync-SiteSavedQueryCache', 'Update-SiteSavedQueryList', 'Invoke-LoadTemplates') {
         $def = $ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq $n }, $true)
@@ -54,6 +72,7 @@ Describe 'Saved site queries fill the list' {
         (@($gridSavedQueries.Items) | ForEach-Object Name) -join ',' | Should -Be 'Laptops,Servers,Windows 11 devices'
         $gridSavedQueries.Items[0].QueryID | Should -Be 'MCM00001'
         $txtWqlValidation.Text | Should -Be 'Loaded 3 saved site queries.'
+        Assert-GridBinding -Grid $gridSavedQueries -GridName 'gridSavedQueries'
     }
 
     It 'shows only the queries that match the filter text' {
@@ -109,5 +128,7 @@ Describe 'The shipped templates fill the template grids' {
             [string]$t.Name | Should -Not -BeNullOrEmpty
         }
         @($gridParameterizedTemplates.Items | Where-Object { $null -eq $_.ParameterCount }).Count | Should -Be 0
+        Assert-GridBinding -Grid $gridOperationalTemplates -GridName 'gridOperationalTemplates'
+        Assert-GridBinding -Grid $gridParameterizedTemplates -GridName 'gridParameterizedTemplates'
     }
 }

@@ -21,6 +21,24 @@ BeforeAll {
     Mock Write-Log {} -ModuleName CollectionManagerCommon
 
     $script:ShellPath = Join-Path $script:AppRoot 'start-collectionmanager.ps1'
+
+    # A column binds to a property by name. A renamed or missing property leaves the column blank, with no error.
+    # The check reads the column bindings of the grid from MainWindow.xaml and looks for each name on the first row.
+    [xml]$script:MainXaml = Get-Content -LiteralPath (Join-Path $script:AppRoot 'MainWindow.xaml') -Raw
+    $script:MainXamlNs = New-Object System.Xml.XmlNamespaceManager($script:MainXaml.NameTable)
+    $script:MainXamlNs.AddNamespace('w', 'http://schemas.microsoft.com/winfx/2006/xaml/presentation')
+    $script:MainXamlNs.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    function Assert-GridBinding {
+        param($Grid, [string]$GridName)
+        $node = $script:MainXaml.SelectSingleNode(('//w:DataGrid[@x:Name=''{0}'']' -f $GridName), $script:MainXamlNs)
+        if (-not $node) { throw "grid $GridName not found in MainWindow.xaml" }
+        $columns = $node.SelectSingleNode('*[contains(local-name(), ''Columns'')]')
+        $text = if ($columns) { $columns.OuterXml } else { '' }
+        $paths = @([regex]::Matches($text, '\{Binding\s+(?:Path=)?([A-Za-z_][A-Za-z0-9_]*)(?![A-Za-z0-9_]*=)(?=[,}\s])') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+        $paths.Count | Should -BeGreaterThan 0 -Because "the grid $GridName has bound columns"
+        $Grid.Items.Count | Should -BeGreaterThan 0 -Because "the grid $GridName needs a row to check"
+        foreach ($path in $paths) { $null -ne $Grid.Items[0].PSObject.Properties[$path] | Should -BeTrue -Because "a column of $GridName binds to $path" }
+    }
     $script:Ast = [System.Management.Automation.Language.Parser]::ParseFile($script:ShellPath, [ref]$null, [ref]$null)
     foreach ($n in 'Update-RuleCountsFromIndex', 'Apply-WqlCollectionSelection', 'Update-Filter', 'Get-CollectionFilterValue', 'Test-CollectionFilterMatch') {
         $def = $script:Ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq $n }, $true)
@@ -115,6 +133,9 @@ Describe 'The rules pass fills the rule controls' {
         $gridQueryRules.Items[0].QueryExpression | Should -Match 'Server'
         $gridIncludeRules.Items[0].IncludeCollectionID | Should -Be 'MCM00002'
         $gridExcludeRules.Items[0].ExcludeCollectionID | Should -Be 'MCM00003'
+        Assert-GridBinding -Grid $gridQueryRules -GridName 'gridQueryRules'
+        Assert-GridBinding -Grid $gridIncludeRules -GridName 'gridIncludeRules'
+        Assert-GridBinding -Grid $gridExcludeRules -GridName 'gridExcludeRules'
     }
 
     It 'puts the rule counts into the collection rows that the grid shows' {
@@ -236,6 +257,7 @@ Describe 'The collection list reaches the grid' {
         $gridCollections.Items[0].IsBuiltIn | Should -BeTrue
         $gridCollections.Items[1].IsBuiltIn | Should -BeFalse
         $gridCollections.Items[2].RefreshType | Should -Be 'Manual'
+        Assert-GridBinding -Grid $gridCollections -GridName 'gridCollections'
     }
 
     It 'starts the rules pass, gives the window back and says how many collections loaded' {
