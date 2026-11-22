@@ -195,10 +195,10 @@ function Get-CollectionRuleSet {
     #>
     param([Parameter(Mandatory)][string]$CollectionId)
 
-    # One SELECT of the one collection with lazy properties: 80 ms on the lab LAN, against 138 ms for
-    # Get-CMDeviceCollection -CollectionId. The rules are read here, when needed, not for every collection at once.
+    # One SELECT of the one collection. The read is not lazy: a lazy read leaves CollectionRules empty, so no rule would show.
+    # The rules are read here, when needed, not for every collection at once.
     $safeId = $CollectionId.Replace("'", "''")
-    $c = @(Invoke-CMWmiQuery -Query ("SELECT * FROM SMS_Collection WHERE CollectionID = '{0}'" -f $safeId) -Option Lazy -ErrorAction Stop) | Select-Object -First 1
+    $c = @(Invoke-CMWmiQuery -Query ("SELECT * FROM SMS_Collection WHERE CollectionID = '{0}'" -f $safeId) -ErrorAction Stop) | Select-Object -First 1
     $rules = @()
     if ($c) { try { $rules = @($c.CollectionRules) } catch { $rules = @() } }
     return ConvertTo-CollectionRuleSet -Rules $rules

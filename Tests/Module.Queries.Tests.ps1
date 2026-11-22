@@ -174,7 +174,17 @@ Describe 'Get-CollectionRuleSet' {
         $r.Query[0].QueryExpression | Should -Be 'select 1'
         $r.Include[0].IncludeCollectionID | Should -Be 'MCM00002'
         $r.Exclude[0].ExcludeCollectionID | Should -Be 'MCM00003'
-        Should -Invoke Invoke-CMWmiQuery -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter { $Query -eq "SELECT * FROM SMS_Collection WHERE CollectionID = 'MCM00001'" -and $Option -eq 'Lazy' }
+        Should -Invoke Invoke-CMWmiQuery -ModuleName CollectionManagerCommon -Times 1 -Exactly -ParameterFilter { $Query -eq "SELECT * FROM SMS_Collection WHERE CollectionID = 'MCM00001'" -and -not $Option }
+    }
+
+    It 'reads the rules without the lazy option, because a lazy read leaves CollectionRules empty on the site' {
+        $text = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\Module\CollectionManagerCommon.psm1') -Raw
+        $m = [regex]::Match($text, '(?s)function Get-CollectionRuleSet \{.*??
+\}?
+')
+        $m.Success | Should -BeTrue
+        $code = [regex]::Replace($m.Value, '(?s)<#.*?#>', '')
+        $code | Should -Not -Match 'Lazy'
     }
 
     It 'returns empty lists for a collection without rules' {
