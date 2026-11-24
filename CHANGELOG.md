@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct the About and description text: the WQL editor is local, validation runs on the site.
+
 ## [2026.11.22.0035] - 2026-11-22
 
 ## 1 change: reports and site settings are kept per site

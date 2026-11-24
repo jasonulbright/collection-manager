@@ -5,7 +5,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D4)](#requirements)
 [![License](https://img.shields.io/github/license/jasonulbright/collection-manager)](LICENSE)
 
-Manage Configuration Manager device collections with an offline WQL editor. Bypass the slow console query editor -- load all collections into a local grid, edit WQL queries in a fast monospace editor, validate, preview results, and apply changes in bulk.
+Manage Configuration Manager device collections with a local WQL editor. Bypass the slow console query editor -- load all collections into a local grid, edit WQL queries in a fast monospace editor, validate and preview results (validation runs the query on the site), and apply changes in bulk.
 
 Ships with a template library: 238 ready-made operational queries and 20 parameterized WQL templates.
 
@@ -63,7 +63,7 @@ The shell uses a sidebar layout with three views and an Options dialog:
 
 1. Connect to the site and switch to **WQL Editor** view.
 2. Enter a collection ID and select **Open by ID**, or select a target from the tree after a full refresh.
-3. Type or paste the WQL. Select **Validate Query** to check the syntax.
+3. Type or paste the WQL. Select **Validate Query** to run the query on the site and check it.
 4. Select **Preview Results** to count matches.
 5. Type a rule name and select **Add Rule**.
 
