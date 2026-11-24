@@ -27,7 +27,9 @@ Describe 'Validation wording' {
     }
 
     It 'says in the About text that validation runs on the site' {
-        $script:strScript | Should -Match 'Validation runs the query on the site'
+        $strAbout = [regex]::Match($script:strScript, '(?s)<StackPanel x:Name="paneAbout".*?</StackPanel>').Value
+        $strAbout | Should -Not -BeNullOrEmpty
+        $strAbout | Should -Match 'Validation runs the query on the site\. Preview Results shows the returned rows\.'
     }
 
     It 'says in every description that validation runs on the site: <_>' -ForEach @(
