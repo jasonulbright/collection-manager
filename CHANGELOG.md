@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2026.11.24.0036] - 2026-11-24
+
+## 1 correction: validation runs on the site
+
 ### Fixed
 
 - Correct the About and description text: the WQL editor is local, validation runs on the site.
