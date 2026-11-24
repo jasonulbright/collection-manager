@@ -638,7 +638,7 @@
                         <Border Grid.Row="7" Padding="0,12,0,0">
                             <WrapPanel Orientation="Horizontal">
                                 <Button x:Name="btnValidateWql" Content="Validate Query"  Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130" Margin="0,0,8,8"
-                                        ToolTip="Run a syntax check on the WQL editor contents"/>
+                                        ToolTip="Run the WQL of the editor on the site to check it"/>
                                 <Button x:Name="btnPreviewWql"  Content="Preview Results" Style="{StaticResource SquareInlineButtonStyle}" MinWidth="130" Margin="0,0,8,8"
                                         ToolTip="Run the WQL on the SMS Provider and show the matching devices."/>
                                 <Button x:Name="btnAddRule"    Content="Add Rule"    Style="{StaticResource SquareInlineButtonStyle}" MinWidth="100" Margin="0,0,8,8"

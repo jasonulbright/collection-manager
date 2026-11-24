@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Main window of Collection Manager, a tool that manages Configuration Manager device collections with an offline WQL editor.
+    Main window of Collection Manager, a tool that manages Configuration Manager device collections. The WQL editor is local. Validation runs the query on the site.
 
 .DESCRIPTION
     Sidebar navigation across three views (Collections, WQL Editor, Templates),
@@ -2930,7 +2930,7 @@ function Show-OptionsDialog {
                 <TextBlock Text="About" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock x:Name="txtAboutVersion" Text="Collection Manager v1.2.1"
                            FontSize="13" FontWeight="SemiBold"/>
-                <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules with offline WQL validation and a result preview. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
+                <TextBlock Text="Browse, create, copy, and remove Configuration Manager device collections. Edit query rules in a local WQL editor. Validation runs the query on the site. Preview Results shows the returned rows. Apply ready-made operational queries or fill out parameterized templates and add the resulting rule to a target collection."
                            FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                 <TextBlock Text="238 ready-made operational queries plus 20 parameterized templates ship with the app."
                            FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>

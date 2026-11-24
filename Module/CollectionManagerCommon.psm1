@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Core module for Collection Manager with Offline WQL Editor.
+    Core module for Collection Manager with a local WQL editor. Query validation runs the query on the site.
 
 .DESCRIPTION
     Import this module to get:

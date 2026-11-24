@@ -3,7 +3,7 @@
     ModuleVersion     = '2026.11.22.0035'
     GUID              = '3f8e6a52-9d14-4c7b-b0e9-6a1d2c8f5b73'
     Author            = 'Jason Ulbright'
-    Description       = 'Collection management and offline WQL editor for Configuration Manager device collections.'
+    Description       = 'Collection management and a local WQL editor for Configuration Manager device collections. Query validation runs the query on the site.'
     PowerShellVersion = '5.1'
 
     FunctionsToExport = @(
